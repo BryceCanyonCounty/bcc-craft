@@ -3,11 +3,11 @@ Config = {
     defaultlang = 'en_lang',
 
     -- Development mode toggle
-    devMode = true,  -- Set to false on a live server
+    devMode = false,  -- Set to false on a live server
     
     -- Discord Webhooks
-    WebhookLink = 'https://discord.com/api/webhooks/1287854127518453874/_5Ni9v8SkhmC0CcZvdUkq2qAqovRb4iFUkLMxaMtCNUEAvD2xtS6oWGfwtpHkoUOz1BW', --insert your webhook link here if you want webhooks
-    WebhookTitle = 'BCC-Craft',
+    WebhookLink = '', --insert your webhook link here if you want webhooks
+    WebhookTitle = 'BCC-Crafting',
     WebhookAvatar = '',
 
     -- Toggle visibility of crafting related blips
@@ -45,10 +45,10 @@ Config = {
                     duration = 1200,
                     lucky = 100,
                     requiredItems = {
-                        { itemName = "sugarcube", itemLabel = "Sugar Cube", itemCount = 2, dontremove = false },
-                        { itemName = "bagofflour", itemLabel = "Bag of Flour", itemCount = 1, dontremove = false },
-                        { itemName = "salt", itemLabel = "Salt", itemCount = 2, dontremove = false },
-                        { itemName = "milk", itemLabel = "Milk", itemCount = 1, dontremove = false }
+                        { itemName = "sugarcube", itemLabel = "Sugar Cube", itemCount = 2, removeItem = true },
+                        { itemName = "bagofflour", itemLabel = "Bag of Flour", itemCount = 1, removeItem = true },
+                        { itemName = "salt", itemLabel = "Salt", itemCount = 2, removeItem = false },
+                        { itemName = "milk", itemLabel = "Milk", itemCount = 1, removeItem = true }
                     }
                 },
                 -- Additional items can be added here...
