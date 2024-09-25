@@ -1,5 +1,5 @@
 local showAllCategories = true
-
+-- Function to open crafting category menu (can either show all or just one)
 -- Function to open crafting category menu (can either show all or just one)
 function openCraftingCategoryMenu(categoryName)
     devPrint("Opening crafting category menu: " .. tostring(categoryName))
@@ -31,14 +31,28 @@ function openCraftingCategoryMenu(categoryName)
     categoryMenu:RegisterElement('line', {
         style = {}
     })
+    -- Function to generate HTML content for each item
+    local function generateHtmlContent(item, imgPath)
+        local label = item.itemLabel
 
+        return '<div style="display: flex; align-items: center; width: 100%;">' ..
+               '<img src="' .. imgPath .. '" style="width: 50px; height: 50px; margin-right: 10px;">' ..
+               '<div style="text-align: center; flex-grow: 1;">' .. label .. '</div>' ..
+               '</div>'
+    end
     -- Loop through items in the category or show a message if there are none
     if #category.items > 0 then
         for _, item in ipairs(category.items) do
+            -- Debug prints for item label and item name
             devPrint("Adding item to menu: " .. item.itemLabel)
+            devPrint("Item name: " .. item.itemName)
+
+            local imgPath = 'nui://vorp_inventory/html/img/items/' .. item.itemName .. '.png'
+            local htmlContent = generateHtmlContent(item, imgPath)
+            
             categoryMenu:RegisterElement('button', {
-                label = item.itemLabel,
-                style = {}
+                html = htmlContent,
+                slot = "content"
             }, function()
                 openCraftingItemMenu(item, categoryName)
             end)
@@ -95,18 +109,28 @@ function openCraftingItemMenu(item, categoryName)
         requiredItemsHTML = requiredItemsHTML .. string.format("<li>- %s x%d</li>", reqItem.itemLabel, tonumber(reqItem.itemCount or 0))
     end
 
-    -- Create the HTML content for the crafting item details
+    -- Assuming item.itemName contains the name of the item image
+    local imgPath = 'nui://vorp_inventory/html/img/items/' .. item.itemName .. '.png'
+    
+    -- Create the HTML content for the crafting item details with centered image
     local htmlContent = string.format([[
         <div style="text-align:center; margin: 20px; font-family: 'Georgia', serif; color: #5A3A29;">
-            <p style="font-size:22px; margin-bottom: 15px; font-weight: bold;">%s <strong style="color:#8B4513;">%d</strong></p>
-            <p style="font-size:20px; margin-bottom: 15px; font-style: italic;">%s <strong style="color:#B22222;">%d %s</strong></p>
-            <p style="font-size:20px; margin-bottom: 15px; font-weight: bold; color:#8A2BE2;">%s <strong style="color:#FFD700;">%d XP</strong></p>
+            <!-- Centered item image -->
+            <img src="%s" style="width: 100px; height: 100px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" alt="%s">
+            
+            <!-- Item details -->
+            <p style="font-size:20px; margin-bottom: 10px; font-style: italic;">%s <strong style="color:#8B4513;">%d</strong></p>
+            <p style="font-size:20px; margin-bottom: 10px; font-style: italic;">%s <strong style="color:#B22222;">%d %s</strong></p>
+            <p style="font-size:20px; margin-bottom: 10px; font-weight: bold; color:#8A2BE2;">%s <strong style="color:#FFD700;">%d XP</strong></p>
+            
+            <!-- Required items -->
             <div style="font-size:20px; margin-bottom: 10px; font-weight: bold; text-transform: uppercase;">%s</div>
             <ul style="list-style-type:square; font-size:18px; text-align:left; display:inline-block; padding: 0; margin: 0;">
                 %s
             </ul>
         </div>
     ]],
+        imgPath, item.itemLabel, -- Image source and alt text (item label)
         _U('RequiredLevel'), tonumber(item.requiredLevel or 1), -- Required level
         _U('CraftTimeRemains'), tonumber(item.duration or 0), _U('seconds'), -- Crafting duration
         _U('RewardXp'), tonumber(item.rewardXP or 0), -- Reward XP
@@ -480,7 +504,13 @@ function openCompletedCraftingMenu(completedCraftingList)
             }, function()
                 devPrint("Collecting crafted item: " .. craftingLog.itemLabel)
                 BCCCraftingMenu:Close()
-                TriggerServerEvent('bcc-crafting:collectCraftedItem', craftingLog)
+                BCCCallbacks.Trigger('bcc-crafting:collectCraftedItem', function(success)
+                    if success then
+                        print("Crafting item collected successfully!")
+                    else
+                        print("Failed to collect the crafted item.")
+                    end
+                end, craftingLog)
                 TriggerServerEvent('bcc-crafting:getCompletedCrafting')
             end)
         end
@@ -549,6 +579,5 @@ function updateCraftingProgressMenu(item, remainingTime)
         progressMenu:update('remainingTime', {
             value = _U('remainingTime') .. remainingTime .. _U('seconds')
         })
-
     end
 end

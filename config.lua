@@ -38,7 +38,10 @@ Config = {
                 {
                     itemName = "consumable_plumcake",
                     itemLabel = "Consumable Plumcake",
-                    requiredJobs = false,
+                    requiredJobs = { -- Define the required jobs for this item
+                        { name = "butcher", grade = 1 },
+                        { name = "chef", grade = 2 }
+                    },
                     rewardXP = 5,
                     requiredLevel = 0,
                     itemAmount = 10,
@@ -51,7 +54,6 @@ Config = {
                         { itemName = "milk", itemLabel = "Milk", itemCount = 1, removeItem = true }
                     }
                 },
-                -- Additional items can be added here...
             }
         },
         {
