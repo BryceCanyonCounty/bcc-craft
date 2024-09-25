@@ -74,6 +74,32 @@ function attemptCraftItem(item)
     TriggerServerEvent('bcc-crafting:attemptCraft', item)
 end
 
+-- Function to calculate the remaining XP needed for the next level
+function GetRemainingXP(currentXP, level)
+    local totalXPForNextLevel = (level * 1000) -- Assuming 1000 XP is needed per level
+    return totalXPForNextLevel - currentXP
+end
+
+-- Helper function to format time into days, hours, minutes, and seconds
+function formatTime(remainingTime)
+    local days = math.floor(remainingTime / (24 * 3600))
+    local hours = math.floor((remainingTime % (24 * 3600)) / 3600)
+    local minutes = math.floor((remainingTime % 3600) / 60)
+    local seconds = remainingTime % 60
+
+    local formattedTime = ""
+    if days > 0 then
+        formattedTime = string.format("%d days, %d hours, %d minutes, %d seconds", days, hours, minutes, seconds)
+    elseif hours > 0 then
+        formattedTime = string.format("%d hours, %d minutes, %d seconds", hours, minutes, seconds)
+    elseif minutes > 0 then
+        formattedTime = string.format("%d minutes, %d seconds", minutes, seconds)
+    else
+        formattedTime = string.format("%d seconds", seconds)
+    end
+    return formattedTime
+end
+
 -- Handle level up notification
 RegisterNetEvent('bcc-crafting:levelUp')
 AddEventHandler('bcc-crafting:levelUp', function(newLevel)

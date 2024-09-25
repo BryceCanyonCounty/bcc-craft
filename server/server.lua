@@ -46,20 +46,28 @@ AddEventHandler('bcc-crafting:attemptCraft', function(item)
             Discord:sendMessage("Player ID: " .. _source .. " attempted crafting " .. item.itemLabel .. " but lacked required level (" .. level .. " < " .. item.requiredLevel .. ")")
             return
         end
-        
-        -- Remove the required items from the player's inventory
+
+        -- Calculate total crafting duration based on the number of items
+        local totalDuration = item.duration * item.itemAmount
+        devPrint("Crafting " .. item.itemAmount .. " items will take " .. totalDuration .. " seconds")
+
+        -- Remove the required items from the player's inventory if removeItem is true
         for _, reqItem in pairs(item.requiredItems) do
-            exports.vorp_inventory:subItem(_source, reqItem.itemName, reqItem.itemCount, reqItem.metadata or {}, function(success)
-                if not success then
-                    VORPcore.NotifyRightTip(_source, _U('RemoveItemFailed', reqItem.itemLabel), 4000)
-                    Discord:sendMessage("Failed to remove required item: " .. reqItem.itemLabel .. " from Player ID: " .. _source)
-                    return
-                end
-                devPrint(_U('RemovedItem', reqItem.itemCount, reqItem.itemLabel))
-            end)
+            if reqItem.removeItem == true then -- Check if the item should be removed
+                exports.vorp_inventory:subItem(_source, reqItem.itemName, reqItem.itemCount, reqItem.metadata or {}, function(success)
+                    if not success then
+                        VORPcore.NotifyRightTip(_source, _U('RemoveItemFailed', reqItem.itemLabel), 4000)
+                        Discord:sendMessage("Failed to remove required item: " .. reqItem.itemLabel .. " from Player ID: " .. _source)
+                        return
+                    end
+                    devPrint(_U('RemovedItem', reqItem.itemCount, reqItem.itemLabel))
+                end)
+            else
+                devPrint("Item not removed as 'removeItem' is false: " .. reqItem.itemLabel)
+            end
         end
 
-        -- Insert crafting attempt into the database
+        -- Insert crafting attempt into the database with updated duration
         local craftingData = {
             ['charidentifier'] = playerId,
             ['itemName'] = item.itemName,
@@ -67,7 +75,7 @@ AddEventHandler('bcc-crafting:attemptCraft', function(item)
             ['itemAmount'] = item.itemAmount,
             ['requiredItems'] = json.encode(item.requiredItems),
             ['status'] = 'in_progress',
-            ['duration'] = item.duration,
+            ['duration'] = totalDuration,
             ['rewardXP'] = item.rewardXP,
             ['timestamp'] = os.time()
         }
@@ -78,15 +86,15 @@ AddEventHandler('bcc-crafting:attemptCraft', function(item)
                 activeCrafting[_source] = {
                     item = item,
                     startTime = os.time(),
-                    duration = item.duration
+                    duration = totalDuration
                 }
                 TriggerClientEvent('bcc-crafting:startCrafting', _source, item)
-                
-                Discord:sendMessage("Player ID: " .. _source .. " started crafting " .. item.itemLabel .. ". Amount: " .. item.itemAmount .. ". Duration: " .. item.duration .. "s")
+
+                Discord:sendMessage("Player ID: " .. _source .. " started crafting " .. item.itemLabel .. ". Amount: " .. item.itemAmount .. ". Total Duration: " .. totalDuration .. "s")
             else
                 VORPcore.NotifyRightTip(_source, _U('CraftingAttemptFailed'), 4000)
                 Discord:sendMessage("Player ID: " .. _source .. " failed to start crafting " .. item.itemLabel .. ".")
-                end
+            end
         end)
     end)
 end)
@@ -277,10 +285,14 @@ AddEventHandler('bcc-crafting:requestCraftingData', function()
     local playerId = Character.charIdentifier -- Unique character identifier
 
     GetPlayerCraftingData(playerId, function(xp, level)
-        local xpToNextLevel = ((level * 100) - xp)
-        
+        -- Correct formula to calculate XP needed for next level
+        local requiredXPForNextLevel = (level * 1000) -- Assume each level requires 1000 XP
+        local xpToNextLevel = requiredXPForNextLevel - xp
+
+        -- Add logging for Discord to track player requests
         Discord:sendMessage("Player ID: " .. _source .. " requested crafting data. Current Level: " .. level .. ", XP to next level: " .. xpToNextLevel)
 
+        -- Trigger the event to send the data to the client
         TriggerClientEvent('bcc-crafting:sendCraftingData', _source, level, xp, xpToNextLevel)
     end)
 end)

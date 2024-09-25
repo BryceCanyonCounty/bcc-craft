@@ -1,5 +1,5 @@
-local CreatedBlip = {}
-local CreatedNpc = {}
+CreatedBlip = {}
+CreatedNpc = {}
 
 CreateThread(function()
     devPrint("Thread started")  -- Devprint
@@ -10,7 +10,7 @@ CreateThread(function()
     if Config.CraftingBlips then
         devPrint("Config.CraftingBlips is enabled")  -- Devprint
         for _, v in pairs(Config.CraftingLocations) do
-            local CraftingBlip = BccUtils.Blips:SetBlip(_U('BlipName'), 'blip_job_board', 3.2, v.coords.x, v.coords.y, v.coords.z)
+            CraftingBlip = BccUtils.Blips:SetBlip(_U('BlipName'), 'blip_job_board', 3.2, v.coords.x, v.coords.y, v.coords.z)
             if CraftingBlip then
                 devPrint("NPC created successfully at: " .. tostring(v.coords))
             else
@@ -25,7 +25,7 @@ CreateThread(function()
     if Config.CraftingNPC then
         devPrint("Config.CraftingNPC is enabled")  -- Devprint
         for _, v in pairs(Config.CraftingLocations) do
-            local craftingped = BccUtils.Ped:Create('MP_POST_RELAY_MALES_01', v.coords.x, v.coords.y, v.coords.z - 1.0, 0, 'world', false)
+            craftingped = BccUtils.Ped:Create('MP_POST_RELAY_MALES_01', v.coords.x, v.coords.y, v.coords.z - 1.0, 0, 'world', false)
             if craftingped then
                 devPrint("NPC created successfully at: " .. tostring(v.coords))
             else
@@ -68,4 +68,3 @@ AddEventHandler("onResourceStop", function(resource)
         end
     end
 end)
-

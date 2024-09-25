@@ -89,6 +89,32 @@ end)
 function openCraftingItemMenu(item, categoryName)
     devPrint("Opening crafting item menu: " .. tostring(item.itemLabel) .. " in category: " .. tostring(categoryName))
 
+    -- Generate the list of required items
+    local requiredItemsHTML = ""
+    for _, reqItem in ipairs(item.requiredItems) do
+        requiredItemsHTML = requiredItemsHTML .. string.format("<li>- %s x%d</li>", reqItem.itemLabel, tonumber(reqItem.itemCount or 0))
+    end
+
+    -- Create the HTML content for the crafting item details
+    local htmlContent = string.format([[
+        <div style="text-align:center; margin: 20px; font-family: 'Georgia', serif; color: #5A3A29;">
+            <p style="font-size:22px; margin-bottom: 15px; font-weight: bold;">%s <strong style="color:#8B4513;">%d</strong></p>
+            <p style="font-size:20px; margin-bottom: 15px; font-style: italic;">%s <strong style="color:#B22222;">%d %s</strong></p>
+            <p style="font-size:20px; margin-bottom: 15px; font-weight: bold; color:#8A2BE2;">%s <strong style="color:#FFD700;">%d XP</strong></p>
+            <div style="font-size:20px; margin-bottom: 10px; font-weight: bold; text-transform: uppercase;">%s</div>
+            <ul style="list-style-type:square; font-size:18px; text-align:left; display:inline-block; padding: 0; margin: 0;">
+                %s
+            </ul>
+        </div>
+    ]],
+        _U('RequiredLevel'), tonumber(item.requiredLevel or 1), -- Required level
+        _U('CraftTimeRemains'), tonumber(item.duration or 0), _U('seconds'), -- Crafting duration
+        _U('RewardXp'), tonumber(item.rewardXP or 0), -- Reward XP
+        _U('RequiredItems'), -- Required items header
+        requiredItemsHTML -- The generated list of required items
+    )
+
+    -- Create the crafting menu page
     local itemMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:item:" .. item.itemName)
     itemMenu:RegisterElement('header', {
         value = item.itemLabel,
@@ -96,45 +122,11 @@ function openCraftingItemMenu(item, categoryName)
         style = {}
     })
 
-    itemMenu:RegisterElement('line', {
+    itemMenu:RegisterElement("html", {
+        value = { htmlContent },
+        slot = 'content',
         style = {}
     })
-
-    -- Display required level
-    devPrint("Required Level: " .. tostring(item.requiredLevel))
-    itemMenu:RegisterElement('textdisplay', {
-        value = _U('RequiredLevel') .. item.requiredLevel,
-        style = {}
-    })
-
-    -- Display crafting duration
-    devPrint("Crafting Duration: " .. tostring(item.duration) .. " seconds")
-    itemMenu:RegisterElement('textdisplay', {
-        value = _U('CraftTimeRemains') .. item.duration .. _U('seconds'),
-        style = {}
-    })
-
-    -- Display reward XP
-    devPrint("Reward XP: " .. tostring(item.rewardXP))
-    itemMenu:RegisterElement('textdisplay', {
-        value = _U('RewardXp') .. item.rewardXP,
-        style = {}
-    })
-
-    -- Display required items
-    devPrint("Listing required items:")
-    itemMenu:RegisterElement('text', {
-        value = _U('RequiredItems'),
-        style = { bold = true }
-    })
-
-    for _, reqItem in ipairs(item.requiredItems) do
-        devPrint(" - " .. reqItem.itemLabel .. " x" .. reqItem.itemCount)
-        itemMenu:RegisterElement('textdisplay', {
-            value = "- " .. reqItem.itemLabel .. " x" .. reqItem.itemCount,
-            style = {}
-        })
-    end
 
     itemMenu:RegisterElement('line', {
         style = {},
@@ -188,9 +180,13 @@ end)
 
 -- Function that gets triggered after receiving crafting data from the server
 RegisterNetEvent('bcc-crafting:sendCraftingData')
-AddEventHandler('bcc-crafting:sendCraftingData', function(level, xpToNextLevel)
+AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP)
     devPrint("Received crafting data from the server")
-    devPrint("Crafting level: " .. tostring(level) .. ", XP to next level: " .. tostring(xpToNextLevel))
+    devPrint("Crafting level: " .. tostring(level) .. ", Current XP: " .. tostring(currentXP))
+
+    -- Calculate remaining XP to reach the next level
+    local xpToNextLevel = GetRemainingXP(currentXP, level)
+    devPrint("XP to next level: " .. tostring(xpToNextLevel))
 
     -- Now create the menu with the received data
     local craftingMainMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:MainPage")
@@ -206,8 +202,26 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, xpToNextLevel)
         slot = 'header'
     })
 
-    craftingMainMenu:RegisterElement('subheader', {
-        value = string.format(_U('CraftingLevel') .. "%d | " .. _U('XpToNextLvl') .. " %d", level, xpToNextLevel),
+    -- HTML content to display crafting level and XP
+    local subheaderHTML = string.format([[
+        <div style="text-align:center; margin: 20px; font-family: 'Georgia', serif; color: #5A3A29;">
+            <p style="font-size:24px; font-weight:bold; margin-bottom: 10px;">
+                <span style="color:#8B4513;">%s</span> 
+                <strong style="color:#B8860B; text-transform:uppercase;">%d</strong> 
+            </p>
+            <p style="font-size:20px; margin-bottom: 5px;">
+                <span style="color:#8A2BE2; font-weight:bold;">%s</span>
+                <strong style="color:#FFD700;">%d XP</strong>
+            </p>
+        </div>
+    ]],
+        _U('CraftingLevel'), tonumber(level), -- Display crafting level
+        _U('XpToNextLvl'), tonumber(xpToNextLevel) -- Correctly calculated XP to next level
+    )
+
+    -- Insert the subheader HTML into the crafting menu
+    craftingMainMenu:RegisterElement("html", {
+        value = { subheaderHTML },
         slot = "header",
         style = {}
     })
@@ -294,10 +308,6 @@ function startCrafting(item)
         }
     }
 
-    -- Open the crafting progress menu with the ongoing item
-    devPrint("Opening crafting progress menu for item: " .. item.itemLabel)
-    openCraftingProgressMenu(ongoingCraftingList)
-
     -- Start the countdown timer
     CreateThread(function()
         while true do
@@ -329,9 +339,9 @@ function openCraftingProgressMenu(ongoingCraftingList)
 
     local progressMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:progress:list")
 
-    progressMenu:RegisterElement('header', {
+    progressMenu:RegisterElement("header", {
         value = _U('ongoingProgress'),
-        slot = 'header',
+        slot = "header",
         style = {}
     })
 
@@ -339,26 +349,49 @@ function openCraftingProgressMenu(ongoingCraftingList)
         style = {}
     })
 
+    -- Create a list of ongoing crafting items
     if #ongoingCraftingList > 0 then
+        local craftingListHtml = ""
+
         -- Loop through each ongoing crafting item
         for _, craftingData in ipairs(ongoingCraftingList) do
             local craftingLog = craftingData.craftingLog
             local remainingTime = craftingData.remainingTime
-    
-            -- Display the item label, amount, and remaining time
-            devPrint("Ongoing crafting: " .. craftingLog.itemLabel .. " x" .. craftingLog.itemAmount .. ", Remaining Time: " .. remainingTime)
-            TextDisplay = progressMenu:RegisterElement('textdisplay', {
-                value = string.format("%s x%d - " .. remainingTime .. _U('seconds'), craftingLog.itemLabel, craftingLog.itemAmount),
-                style = { fontSize = '18px' }
-            })
+            local formattedTime = formatTime(remainingTime)
+
+            -- Generate the HTML content for each crafting item
+            craftingListHtml = craftingListHtml .. string.format([[
+                <div style="text-align:center; margin: 20px 0; font-family: 'Crimson Text', serif; color: #4E342E;">
+                    <p style="font-size:20px; font-weight: bold;">%s <strong>x%d</strong></p>
+                    <p style="font-size:18px; color: #8A2BE2;">%s <strong>%s</strong></p>
+                </div>
+            ]],
+            craftingLog.itemLabel, craftingLog.itemAmount, _U('remainingTime'), formattedTime)
+
+            devPrint("Ongoing crafting: " .. craftingLog.itemLabel .. " x" .. craftingLog.itemAmount .. ", Remaining Time: " .. formattedTime)
         end
-    else
-        -- Display the message for no ongoing crafting processes
-        devPrint("No ongoing crafting processes.")
-        pTextDisplay = progressMenu:RegisterElement('textdisplay', {
-            value = _U('NoOngoingProccess'),
-            style = { fontSize = '18px' }
+
+        -- Register the HTML with the menu
+        progressMenu:RegisterElement("html", {
+            value = { craftingListHtml },
+            slot = "content",
+            style = {}
         })
+
+    else
+        -- If there are no ongoing crafting processes, display a message
+        local noCraftingHtml = [[
+            <div style="text-align:center; font-family: 'Crimson Text', serif; color: #4E342E;">
+                <p style="font-size:20px; color: #B22222;">]] .. _U('NoOngoingProccess') .. [[</p>
+            </div>
+        ]]
+        progressMenu:RegisterElement("html", {
+            value = { noCraftingHtml },
+            slot = "content",
+            style = {}
+        })
+
+        devPrint("No ongoing crafting processes.")
     end
 
     progressMenu:RegisterElement('line', {
@@ -509,24 +542,13 @@ function GetOngoingCraftingItem()
     TriggerServerEvent('bcc-crafting:getOngoingCrafting')
 end
 
-
-function GetCraftingRemainingTime()
-    return remainingTime
-end
-
 function updateCraftingProgressMenu(item, remainingTime)
-    local progressMenu = BCCCraftingMenu:GetPage("bcc-crafting:progress:" .. item.itemName)
+    local progressMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:progress1:" .. item.itemName)
     if progressMenu then
         -- Update the remaining time text
-        progressMenu:UpdateElement('remainingTime', {
+        progressMenu:update('remainingTime', {
             value = _U('remainingTime') .. remainingTime .. _U('seconds')
         })
 
-        -- Optionally, update the progress bar
-        -- local elapsedTime = item.duration - remainingTime
-        -- progressMenu:UpdateElement('progressBar', {
-        --     value = elapsedTime
-        -- })
     end
 end
-
