@@ -22,6 +22,7 @@ client_scripts {
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'server/dbUpdater.lua',
+    'server/functions.lua',
     'server/server.lua'
 }
 
@@ -30,7 +31,7 @@ dependency {
     'vorp_inventory',
     'vorp_character',
     'bcc-utils',
-    'feather-menu'
+    'feather-menu',
 }
 
-version '0.0.2'
+version '0.0.3'

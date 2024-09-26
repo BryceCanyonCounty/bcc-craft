@@ -41,6 +41,33 @@ else
     function devPrint(message) end -- No-op if DevMode is disabled
 end
 
+-- Define the BCCCallbacks table
+BCCCallbacks = {
+    callbacks = {}
+}
+
+-- Generate a unique ID for each callback request
+local function generateRequestId()
+    -- Use GetGameTimer() instead of os.time()
+    return math.random(10000, 99999) .. GetGameTimer()
+end
+
+-- Function to trigger the callback from the client-side
+BCCCallbacks.Trigger = function(name, cb, ...)
+    local requestId = generateRequestId()
+
+    -- Register the event listener for receiving the response
+    RegisterNetEvent('BCCCallbacks:Response')
+    AddEventHandler('BCCCallbacks:Response', function(respRequestId, response)
+        if requestId == respRequestId then
+            cb(response) -- Execute the callback with the server response
+        end
+    end)
+
+    -- Send the request to the server with the request ID
+    TriggerServerEvent('BCCCallbacks:Request', name, requestId, ...)
+end
+
 -- Handle player death and close menu
 function HandlePlayerDeathAndCloseMenu()
     local playerPed = PlayerPedId()
@@ -68,10 +95,15 @@ function HandlePlayerDeathAndCloseMenu()
     return false -- Return false to indicate the player is alive and the menu can open
 end
 
+-- On the client, you can now trigger the crafting attempt with a callback
 function attemptCraftItem(item)
-    devPrint("Attempting to craft item: " .. item.itemLabel)
-    -- Trigger server event to attempt crafting
-    TriggerServerEvent('bcc-crafting:attemptCraft', item)
+    BCCCallbacks.Trigger('bcc-crafting:attemptCraft', function(success)
+        if success then
+            print("Crafting started successfully.")
+        else
+            print("Failed to start crafting.")
+        end
+    end, item)
 end
 
 -- Function to calculate the remaining XP needed for the next level
