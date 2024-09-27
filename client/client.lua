@@ -7,57 +7,63 @@ CreateThread(function()
     local CraftingMenuPrompt = BccUtils.Prompts:SetupPromptGroup()
 
     local craftingprompt = CraftingMenuPrompt:RegisterPrompt(_U('PromptName'), 0x760A9C6F, 1, 1, true, 'hold', { timedeventhash = 'MEDIUM_TIMED_EVENT' })
-    if Config.CraftingBlips then
-        devPrint("Config.CraftingBlips is enabled")  -- Devprint
-        for _, v in pairs(Config.CraftingLocations) do
-            CraftingBlip = BccUtils.Blips:SetBlip(_U('BlipName'), 'blip_job_board', 3.2, v.coords.x, v.coords.y, v.coords.z)
-            if CraftingBlip then
-                devPrint("NPC created successfully at: " .. tostring(v.coords))
-            else
-                devPrint("Failed to create NPC at: " .. tostring(v.coords))
+
+    -- Iterate over CraftingLocations from the config
+    for _, location in pairs(Config.CraftingLocations) do
+        -- Ensure the 'coords' and 'NpcHeading' are arrays, so we can loop over multiple locations
+        if type(location.coords) == "table" and type(location.NpcHeading) == "table" then
+            for i, coord in ipairs(location.coords) do
+                local heading = location.NpcHeading[i] -- Get the corresponding NPC heading
+
+                -- Handle Crafting Blips
+                if location.blip and location.blip.show then
+                    local CraftingBlip = BccUtils.Blips:SetBlip(location.blip.label, location.blip.sprite, location.blip.scale, coord.x, coord.y, coord.z)
+                    CreatedBlip[#CreatedBlip + 1] = CraftingBlip
+                else
+                    devPrint("Blips disabled for location: " .. tostring(coord))
+                end
+
+                -- Handle Crafting NPCs
+                if location.npc and location.npc.show then
+                    craftingped = BccUtils.Ped:Create(location.npc.model, coord.x, coord.y, coord.z - 1.0, 0, 'world', false)
+                    CreatedNpc[#CreatedNpc + 1] = craftingped
+                    craftingped:Freeze()
+                    craftingped:SetHeading(heading)
+                    craftingped:Invincible()
+                else
+                    devPrint("NPCs disabled for location: " .. tostring(coord))
+                end
             end
-            CreatedBlip[#CreatedBlip + 1] = CraftingBlip
+        else
+            devPrint("Error: 'coords' or 'NpcHeading' is not a table for location.")
         end
-    else
-        devPrint("Config.CraftingBlips is disabled")  -- Devprint
     end
 
-    if Config.CraftingNPC then
-        devPrint("Config.CraftingNPC is enabled")  -- Devprint
-        for _, v in pairs(Config.CraftingLocations) do
-            craftingped = BccUtils.Ped:Create('MP_POST_RELAY_MALES_01', v.coords.x, v.coords.y, v.coords.z - 1.0, 0, 'world', false)
-            if craftingped then
-                devPrint("NPC created successfully at: " .. tostring(v.coords))
-            else
-                devPrint("Failed to create NPC at: " .. tostring(v.coords))
-            end
-            CreatedNpc[#CreatedNpc + 1] = craftingped
-            craftingped:Freeze()
-            craftingped:SetHeading(v.NpcHeading)
-            craftingped:Invincible()
-        end
-        
-    else
-        devPrint("Config.CraftingNPC is disabled")  -- Devprint
-    end
-
+    -- Monitor player's proximity to crafting locations
     while true do
         Wait(1)
         local playerCoords = GetEntityCoords(PlayerPedId())
 
-        for _, v in pairs(Config.CraftingLocations) do
-            local dist = #(playerCoords - v.coords)
-            if dist < 2 then
-                CraftingMenuPrompt:ShowGroup(_U('CraftBook'))
-                if craftingprompt:HasCompleted() then
-                    devPrint("Crafting prompt has been completed")  -- Devprint
-                    TriggerEvent('bcc-crafting:openmenu')
+        for _, location in pairs(Config.CraftingLocations) do
+            -- Loop through all coordinates for this location
+            if type(location.coords) == "table" then
+                for _, coord in ipairs(location.coords) do
+                    local dist = #(playerCoords - coord)
+                    if dist < 2 then
+                        CraftingMenuPrompt:ShowGroup(_U('CraftBook'))  -- Show prompt to open the crafting menu
+                        if craftingprompt:HasCompleted() then
+                            devPrint("Crafting prompt has been completed")  -- Devprint
+                            -- Trigger the menu with location-specific categories
+                            TriggerEvent('bcc-crafting:openmenu', location.categories)
+                        end
+                    end
                 end
             end
         end
     end
 end)
 
+-- Cleanup when the resource stops
 AddEventHandler("onResourceStop", function(resource)
     if resource == GetCurrentResourceName() then
         for _, v in pairs(CreatedBlip) do

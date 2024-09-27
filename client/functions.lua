@@ -95,8 +95,9 @@ function HandlePlayerDeathAndCloseMenu()
     return false -- Return false to indicate the player is alive and the menu can open
 end
 
--- On the client, you can now trigger the crafting attempt with a callback
-function attemptCraftItem(item)
+-- Function to trigger the crafting attempt
+function attemptCraftItem(item, amount)
+    item.itemAmount = tonumber(amount)  -- Set the amount to craft
     BCCCallbacks.Trigger('bcc-crafting:attemptCraft', function(success)
         if success then
             print("Crafting started successfully.")
