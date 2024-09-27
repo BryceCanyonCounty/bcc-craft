@@ -55,4 +55,11 @@ Locales["en_lang"] = {
     CollectedCraftedItem = 'You have collected ',
     FailedToAddItem = 'Failed to add item to your inventory.',
     VersionCheck = 'Checking version for resource: ',
+    InvalidJobForCrafting = "You do not meet the job requirements to craft ",
+    NoAvailableCategories = "No Available Categories",
+    CraftAmount = 'Crafting Amount for ',
+    EnterAmount = 'Enter Amount to Craft',
+    AmountPlaceholder = 'Type amount',
+    ConfirmCraft = 'Craft ',
+    InvalidAmount = 'Invalid amount entered. Please enter a number greater than 0.'
 }

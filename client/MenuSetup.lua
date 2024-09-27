@@ -1,17 +1,20 @@
-local showAllCategories = true
+local showCraftBookcategory = false
+
 -- Function to open crafting category menu (can either show all or just one)
--- Function to open crafting category menu (can either show all or just one)
-function openCraftingCategoryMenu(categoryName)
+function openCraftingCategoryMenu(categoryName, currentLocationCategories)
     devPrint("Opening crafting category menu: " .. tostring(categoryName))
 
-    -- Find the category data
+    -- Find the category data in the crafting locations
     local category = nil
-    for _, categoryData in ipairs(Config.CraftingCategories) do
-        devPrint("Checking category: " .. categoryData.name)
-        if categoryData.name == categoryName then
-            category = categoryData
-            break
+    for _, location in ipairs(Config.CraftingLocations) do
+        for _, categoryData in ipairs(location.categories) do
+            devPrint("Checking category: " .. categoryData.name)
+            if categoryData.name == categoryName then
+                category = categoryData
+                break
+            end
         end
+        if category then break end
     end
 
     if not category then
@@ -31,25 +34,25 @@ function openCraftingCategoryMenu(categoryName)
     categoryMenu:RegisterElement('line', {
         style = {}
     })
+
     -- Function to generate HTML content for each item
     local function generateHtmlContent(item, imgPath)
         local label = item.itemLabel
-
         return '<div style="display: flex; align-items: center; width: 100%;">' ..
-               '<img src="' .. imgPath .. '" style="width: 50px; height: 50px; margin-right: 10px;">' ..
-               '<div style="text-align: center; flex-grow: 1;">' .. label .. '</div>' ..
-               '</div>'
+            '<img src="' .. imgPath .. '" style="width: 50px; height: 50px; margin-right: 10px;">' ..
+            '<div style="text-align: center; flex-grow: 1;">' .. label .. '</div>' ..
+            '</div>'
     end
+
     -- Loop through items in the category or show a message if there are none
     if #category.items > 0 then
         for _, item in ipairs(category.items) do
-            -- Debug prints for item label and item name
             devPrint("Adding item to menu: " .. item.itemLabel)
             devPrint("Item name: " .. item.itemName)
 
             local imgPath = 'nui://vorp_inventory/html/img/items/' .. item.itemName .. '.png'
             local htmlContent = generateHtmlContent(item, imgPath)
-            
+
             categoryMenu:RegisterElement('button', {
                 html = htmlContent,
                 slot = "content"
@@ -70,16 +73,17 @@ function openCraftingCategoryMenu(categoryName)
         slot = "footer",
     })
 
-    -- If in single-category mode, we go back to the same category; otherwise, open the main menu
+    -- If in single-category mode, we go back to the same category; otherwise, open the specific location menu
     categoryMenu:RegisterElement('button', {
         label = _U('BackButton'),
         slot = "footer",
         style = {}
     }, function()
-        if showAllCategories then
-            TriggerEvent('bcc-crafting:openmenu')  -- Open the main menu with all categories
+        -- Only show the categories for the current location
+        if currentLocationCategories then
+            TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)  -- Go back to the location-specific category list
         else
-            openCraftingCategoryMenu(categoryName)  -- Re-open the same category (stay in single-category mode)
+            devPrint("Error: No currentLocationCategories available.")
         end
     end)
 
@@ -91,15 +95,15 @@ function openCraftingCategoryMenu(categoryName)
     devPrint("Opening category menu: " .. categoryName)
     BCCCraftingMenu:Open({ startupPage = categoryMenu })
 end
-
 -- Event to open a specific category menu (single-category mode)
 RegisterNetEvent('bcc-crafting:openCategoryMenu')
 AddEventHandler('bcc-crafting:openCategoryMenu', function(categoryName)
     devPrint("Triggered event to open specific category: " .. tostring(categoryName))
-    showAllCategories = false  -- We are in single-category mode
+    currentLocationCategories = categoryName
     openCraftingCategoryMenu(categoryName)  -- Open the specific category
 end)
 
+-- Function to open crafting item menu
 function openCraftingItemMenu(item, categoryName)
     devPrint("Opening crafting item menu: " .. tostring(item.itemLabel) .. " in category: " .. tostring(categoryName))
 
@@ -111,18 +115,18 @@ function openCraftingItemMenu(item, categoryName)
 
     -- Assuming item.itemName contains the name of the item image
     local imgPath = 'nui://vorp_inventory/html/img/items/' .. item.itemName .. '.png'
-    
+
     -- Create the HTML content for the crafting item details with centered image
     local htmlContent = string.format([[
         <div style="text-align:center; margin: 20px; font-family: 'Georgia', serif; color: #5A3A29;">
             <!-- Centered item image -->
             <img src="%s" style="width: 100px; height: 100px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" alt="%s">
-            
+
             <!-- Item details -->
             <p style="font-size:20px; margin-bottom: 10px; font-style: italic;">%s <strong style="color:#8B4513;">%d</strong></p>
             <p style="font-size:20px; margin-bottom: 10px; font-style: italic;">%s <strong style="color:#B22222;">%d %s</strong></p>
             <p style="font-size:20px; margin-bottom: 10px; font-weight: bold; color:#8A2BE2;">%s <strong style="color:#FFD700;">%d XP</strong></p>
-            
+
             <!-- Required items -->
             <div style="font-size:20px; margin-bottom: 10px; font-weight: bold; text-transform: uppercase;">%s</div>
             <ul style="list-style-type:square; font-size:18px; text-align:left; display:inline-block; padding: 0; margin: 0;">
@@ -164,9 +168,8 @@ function openCraftingItemMenu(item, categoryName)
         slot = "footer",
         style = {}
     }, function()
-        devPrint("Attempting to craft item: " .. item.itemLabel)
-        attemptCraftItem(item)
-        openCraftingCategoryMenu(categoryName)
+        devPrint("Triggering input menu for crafting amount of: " .. item.itemLabel)
+        openCraftingAmountInput(item, categoryName, currentLocationCategories) -- Open the input page for the crafting amount
     end)
 
     -- Option to go back to the category menu
@@ -175,7 +178,7 @@ function openCraftingItemMenu(item, categoryName)
         slot = "footer",
         style = {}
     }, function()
-        openCraftingCategoryMenu(categoryName)
+        openCraftingCategoryMenu(categoryName, currentLocationCategories) -- Pass the categories to go back to the category menu
     end)
 
     itemMenu:RegisterElement('bottomline', {
@@ -187,10 +190,11 @@ function openCraftingItemMenu(item, categoryName)
     BCCCraftingMenu:Open({ startupPage = itemMenu })
 end
 
--- Function to open the main crafting menu (shows all categories)
-AddEventHandler('bcc-crafting:openmenu', function()
-    devPrint("Opening main crafting menu with all categories")
-    showAllCategories = true  -- We are in all-categories mode now
+-- Function to open the main crafting menu (shows only location-specific categories)
+AddEventHandler('bcc-crafting:openmenu', function(categories)
+    devPrint("Opening main crafting menu with specific categories for the location")
+    currentLocationCategories = categories  -- Store the categories so we can use them later
+    showCraftBookcategory = false -- We are in location-specific categories mode now
 
     if HandlePlayerDeathAndCloseMenu() then
         devPrint("Player is dead, closing the menu")
@@ -199,12 +203,75 @@ AddEventHandler('bcc-crafting:openmenu', function()
 
     -- Request crafting data from the server
     devPrint("Requesting crafting data from the server")
-    TriggerServerEvent('bcc-crafting:requestCraftingData')
+    TriggerServerEvent('bcc-crafting:requestCraftingData', categories)
 end)
+
+-- Open crafting amount input menu
+function openCraftingAmountInput(item)
+    local inputValue = nil
+    local craftingAmountMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:amountInput")
+
+    -- Header
+    craftingAmountMenu:RegisterElement('header', {
+        value = item.itemLabel,
+        slot = 'header',
+        style = {}
+    })
+    
+    craftingAmountMenu:RegisterElement('line', {
+        style = {},
+        slot = "content"
+    })
+    
+    -- Input field
+    craftingAmountMenu:RegisterElement('input', {
+        label = _U('EnterAmount'),
+        placeholder = _U('AmountPlaceholder'),
+        slot = 'content',
+        style = {}
+    }, function(data)
+        inputValue = tonumber(data.value) or 0  -- Update the input value
+    end)
+    
+    craftingAmountMenu:RegisterElement('line', {
+        style = {},
+        slot = "footer"
+    })
+    
+    -- Confirm button
+    craftingAmountMenu:RegisterElement('button', {
+        label = _U('ConfirmCraft') .. item.itemLabel,
+        slot = 'footer',
+        style = {}
+    }, function()
+        if inputValue > 0 then
+            attemptCraftItem(item, inputValue)  -- Pass the input value as amount
+        else
+            devPrint("Invalid amount entered.")
+            VORPcore.NotifyRightTip(source, _U('InvalidAmount'), 4000)
+        end
+    end)
+
+    -- Back button
+    craftingAmountMenu:RegisterElement('button', {
+        label = _U('BackButton'),
+        slot = 'footer',
+        style = {}
+    }, function()
+        openCraftingCategoryMenu(item.categoryName, currentLocationCategories)  -- Return to the category menu
+    end)
+
+    craftingAmountMenu:RegisterElement('bottomline', {
+        style = {},
+        slot = "footer"
+    })
+
+    BCCCraftingMenu:Open({ startupPage = craftingAmountMenu })
+end
 
 -- Function that gets triggered after receiving crafting data from the server
 RegisterNetEvent('bcc-crafting:sendCraftingData')
-AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP)
+AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP, categories)
     devPrint("Received crafting data from the server")
     devPrint("Crafting level: " .. tostring(level) .. ", Current XP: " .. tostring(currentXP))
 
@@ -215,19 +282,21 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP)
     -- Now create the menu with the received data
     local craftingMainMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:MainPage")
 
+    -- Add crafting header
     craftingMainMenu:RegisterElement('header', {
         value = _U('Crafting'),
         slot = 'header',
         style = {}
     })
 
+    -- Line break after the header
     craftingMainMenu:RegisterElement('line', {
         style = {},
         slot = 'header'
     })
 
-    -- HTML content to display crafting level and XP
-    local subheaderHTML = string.format([[
+    -- Display player's crafting level and XP
+    local subheaderHTML = string.format([[        
         <div style="text-align:center; margin: 20px; font-family: 'Georgia', serif; color: #5A3A29;">
             <p style="font-size:24px; font-weight:bold; margin-bottom: 10px;">
                 <span style="color:#8B4513;">%s</span> 
@@ -240,7 +309,7 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP)
         </div>
     ]],
         _U('CraftingLevel'), tonumber(level), -- Display crafting level
-        _U('XpToNextLvl'), tonumber(xpToNextLevel) -- Correctly calculated XP to next level
+        _U('XpToNextLvl'), tonumber(xpToNextLevel) -- Correctly calculate XP to next level
     )
 
     -- Insert the subheader HTML into the crafting menu
@@ -252,23 +321,58 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP)
 
     devPrint("Crafting main menu initialized")
 
+    -- Line after the XP info
     craftingMainMenu:RegisterElement('line', {
         style = {}
     })
 
-    -- Iterate over the categories in order, only if showAllCategories is true
-    if showAllCategories then
-        for _, categoryData in ipairs(Config.CraftingCategories) do
-            devPrint("Adding crafting category: " .. categoryData.label)
+    -- Check if we're displaying the menu from a craftbook interaction
+    if showCraftBookcategory then
+        devPrint("Displaying single craftbook category")
+        -- Assuming 'categories' contains only one category when opened via craftbook
+        if categories and categories[1] then
+            local categoryData = categories[1]
             craftingMainMenu:RegisterElement('button', {
                 label = categoryData.label,
                 style = {},
             }, function()
-                openCraftingCategoryMenu(categoryData.name)
+                openCraftingCategoryMenu(categoryData.name, currentLocationCategories)
             end)
+        else
+            devPrint("No valid category for the craftbook")
+            craftingMainMenu:RegisterElement('textdisplay', {
+                value = _U('NoAvailableCategories'),
+                style = { fontSize = '18px' }
+            })
+        end
+    else
+        -- Otherwise, show all categories
+        devPrint("Displaying all available categories")
+        if type(categories) == "table" and #categories > 0 then
+            for index, categoryData in ipairs(categories) do
+                devPrint("Category Index: " .. index .. ", Category Data: " .. json.encode(categoryData))
+
+                if categoryData.label and categoryData.name then
+                    craftingMainMenu:RegisterElement('button', {
+                        label = categoryData.label,
+                        style = {},
+                    }, function()
+                        openCraftingCategoryMenu(categoryData.name, currentLocationCategories)
+                    end)
+                else
+                    devPrint("Invalid category data at index: " .. index .. ", Missing 'label' or 'name'")
+                end
+            end
+        else
+            devPrint("No crafting categories available or 'categories' is not a table.")
+            craftingMainMenu:RegisterElement('textdisplay', {
+                value = _U('NoAvailableCategories'),
+                style = { fontSize = '18px' }
+            })
         end
     end
 
+    -- Footer line and buttons
     craftingMainMenu:RegisterElement('line', {
         style = {},
         slot = "footer"
@@ -280,7 +384,6 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP)
         slot = "footer"
     }, function()
         devPrint("Checking ongoing crafting processes")
-        -- Request the server for ongoing crafting processes
         TriggerServerEvent('bcc-crafting:getOngoingCrafting')
     end)
 
@@ -290,10 +393,10 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP)
         slot = "footer"
     }, function()
         devPrint("Checking completed crafting processes")
-        -- Request the server for completed crafting processes
         TriggerServerEvent('bcc-crafting:getCompletedCrafting')
     end)
 
+    -- Optional footer image
     craftingMainMenu:RegisterElement('bottomline', {
         style = {},
         slot = "footer"
@@ -314,6 +417,7 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP)
     BCCCraftingMenu:Open({ startupPage = craftingMainMenu })
 end)
 
+
 function startCrafting(item)
     devPrint("Crafting started for item: " .. item.itemLabel .. ", duration: " .. item.duration)
 
@@ -332,33 +436,11 @@ function startCrafting(item)
         }
     }
 
-    -- Start the countdown timer
-    CreateThread(function()
-        while true do
-            local remainingTime = math.ceil((endTime - GetGameTimer()) / 1000)
-            devPrint("Remaining time for " .. item.itemLabel .. ": " .. remainingTime .. " seconds")
-            
-            if remainingTime <= 0 then
-                remainingTime = 0
-                devPrint("Crafting completed for item: " .. item.itemLabel)
-            end
-
-            -- Update the progress menu with the remaining time
-            updateCraftingProgressMenu(item, remainingTime)
-
-            if remainingTime <= 0 then
-                -- Crafting complete
-                devPrint("Exiting crafting timer thread for item: " .. item.itemLabel)
-                break
-            end
-
-            Wait(1000) -- Update every second
-        end
-    end)
+    openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories)
 end
 
 -- Function to display the list of ongoing crafting processes
-function openCraftingProgressMenu(ongoingCraftingList)
+function openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories)
     devPrint("Opening progress menu for ongoing crafting processes.")
 
     local progressMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:progress:list")
@@ -429,9 +511,12 @@ function openCraftingProgressMenu(ongoingCraftingList)
         slot = "footer"
     }, function()
         devPrint("Returning to main menu from progress menu.")
+        devPrint("currentLocationCategories: " .. json.encode(currentLocationCategories))  -- Debug print for categories
         BCCCraftingMenu:Close()
-        TriggerEvent('bcc-crafting:openmenu')
+    
+        TriggerEvent('bcc-crafting:openmenu', currentLocationCategories) -- Go back to the category list
     end)
+    
 
     progressMenu:RegisterElement('bottomline', {
         style = {},
@@ -470,7 +555,7 @@ function openCraftingItemProgressMenu(item, remainingTime)
         slot = "footer"
     }, function()
         devPrint("Returning to progress menu from item progress.")
-        openCraftingProgressMenu(ongoingCraftingList)
+        openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories)
     end)
 
     devPrint("Opening item progress menu for: " .. item.itemLabel)
@@ -478,7 +563,7 @@ function openCraftingItemProgressMenu(item, remainingTime)
 end
 
 -- Function to display the list of completed crafting processes
-function openCompletedCraftingMenu(completedCraftingList)
+function openCompletedCraftingMenu(completedCraftingList, currentLocationCategories)
     devPrint("Opening completed crafting menu.")
 
     local completedMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:completed:list")
@@ -534,9 +619,10 @@ function openCompletedCraftingMenu(completedCraftingList)
         slot = "footer"
     }, function()
         devPrint("Returning to main menu from completed crafting.")
+        devPrint("currentLocationCategories: " .. json.encode(currentLocationCategories))  -- Debug print for categories
         BCCCraftingMenu:Close()
-        TriggerEvent('bcc-crafting:openmenu')
-    end)
+        TriggerEvent('bcc-crafting:openmenu', currentLocationCategories) -- Go back to the category list
+    end)    
 
     completedMenu:RegisterElement('bottomline', {
         style = {},
@@ -554,30 +640,21 @@ AddEventHandler('bcc-crafting:startCrafting', function(item)
     startCrafting(item)
 end)
 
--- Listen for the list of ongoing crafting processes from the server
 RegisterNetEvent('bcc-crafting:sendOngoingCraftingList')
 AddEventHandler('bcc-crafting:sendOngoingCraftingList', function(ongoingCraftingList)
     devPrint("Received ongoing crafting list from server.")
-    openCraftingProgressMenu(ongoingCraftingList)
+    -- Ensure that 'currentLocationCategories' is passed when opening the menu
+    openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories)
 end)
 
--- Listen for the list of completed crafting processes from the server
 RegisterNetEvent('bcc-crafting:sendCompletedCraftingList')
 AddEventHandler('bcc-crafting:sendCompletedCraftingList', function(completedCraftingList)
     devPrint("Received completed crafting list from server.")
-    openCompletedCraftingMenu(completedCraftingList)
+    -- Ensure that 'currentLocationCategories' is passed when opening the menu
+    openCompletedCraftingMenu(completedCraftingList, currentLocationCategories)
 end)
+
 -- Client-side function to request ongoing crafting data from the server
 function GetOngoingCraftingItem()
     TriggerServerEvent('bcc-crafting:getOngoingCrafting')
-end
-
-function updateCraftingProgressMenu(item, remainingTime)
-    local progressMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:progress1:" .. item.itemName)
-    if progressMenu then
-        -- Update the remaining time text
-        progressMenu:update('remainingTime', {
-            value = _U('remainingTime') .. remainingTime .. _U('seconds')
-        })
-    end
 end

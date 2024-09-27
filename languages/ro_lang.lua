@@ -55,4 +55,11 @@ Locales["ro_lang"] = {
     CollectedCraftedItem = 'Ai ridicat obiectul confectionat: ',
     FailedToAddItem = 'Obiectul nu a putut fi adaugat in inventar.',
     VersionCheck = 'Verificarea versiunii pentru resursa: ',
+    InvalidJobForCrafting = "You do not meet the job requirements to craft ",
+    NoAvailableCategories = "Nicio o categorie",
+    CraftAmount = 'Crafting Amount for ',
+    EnterAmount = 'Enter Amount to Craft',
+    AmountPlaceholder = 'Type amount',
+    ConfirmCraft = 'Craft ',
+    InvalidAmount = 'Invalid amount entered. Please enter a number greater than 0.'
 }

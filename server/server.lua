@@ -11,19 +11,19 @@ BCCCallbacks.Register('bcc-crafting:attemptCraft', function(source, cb, item)
     if item.requiredJobs and #item.requiredJobs > 0 then
         devPrint("Checking job requirements for: " .. item.itemLabel)
         local hasValidJob = false
-    
+
         -- Validate the player's job
         for _, allowedJob in pairs(item.requiredJobs) do
             devPrint("Allowed job: " .. allowedJob.name .. ", Grade required: " .. allowedJob.grade)
             devPrint("Player job: " .. playerJob .. ", Player job grade: " .. jobGrade)
-    
+
             if playerJob == allowedJob.name and jobGrade >= allowedJob.grade then
                 hasValidJob = true
                 devPrint("Player meets the job requirements for: " .. allowedJob.name)
                 break
             end
         end
-    
+
         if not hasValidJob then
             devPrint("Player does not meet the job requirements for: " .. item.itemLabel)
             VORPcore.NotifyObjective(source, _U('InvalidJobForCrafting') .. item.itemLabel, 4000)
@@ -40,7 +40,7 @@ BCCCallbacks.Register('bcc-crafting:attemptCraft', function(source, cb, item)
         devPrint(_U('CheckingRequiredItem') .. reqItem.itemName)
         local count = exports.vorp_inventory:getItemCount(source, nil, reqItem.itemName)
         devPrint(_U('PlayerHas') .. count .. _U('Of') .. reqItem.itemName .. _U('Requires') .. reqItem.itemCount .. ")")
-        if count < reqItem.itemCount then
+        if count < reqItem.itemCount * item.itemAmount then  -- Multiply required items by the amount
             hasItems = false
             devPrint(_U('MissingItem') .. reqItem.itemName)
             break
@@ -67,14 +67,14 @@ BCCCallbacks.Register('bcc-crafting:attemptCraft', function(source, cb, item)
 
         -- Remove the required items from the player's inventory if removeItem is true
         for _, reqItem in pairs(item.requiredItems) do
-            if reqItem.removeItem == true then -- Check if the item should be removed
-                exports.vorp_inventory:subItem(source, reqItem.itemName, reqItem.itemCount, reqItem.metadata or {}, function(success)
+            if reqItem.removeItem == true then
+                exports.vorp_inventory:subItem(source, reqItem.itemName, reqItem.itemCount * item.itemAmount, reqItem.metadata or {}, function(success)
                     if not success then
                         VORPcore.NotifyRightTip(source, _U('RemoveItemFailed', reqItem.itemLabel), 4000)
                         cb(false)
                         return
                     end
-                    devPrint(_U('RemovedItem', reqItem.itemCount, reqItem.itemLabel))
+                    devPrint(_U('RemovedItem', reqItem.itemCount * item.itemAmount, reqItem.itemLabel))
                 end)
             else
                 devPrint("Item not removed as 'removeItem' is false: " .. reqItem.itemLabel)
@@ -181,31 +181,29 @@ AddEventHandler('bcc-crafting:getOngoingCrafting', function()
     local Character = VORPcore.getUser(_source).getUsedCharacter
     local charIdentifier = Character.charIdentifier -- Unique character identifier
 
-    -- Log for debugging and Discord message
     devPrint(_U('CharacterIdentifier') .. charIdentifier)
-    
-    -- Query the database for ongoing crafting logs
+    Discord:sendMessage("Player ID: " .. _source .. " is retrieving ongoing crafting items.")
+
     exports.oxmysql:execute("SELECT * FROM bcc_crafting_log WHERE charidentifier = @charidentifier AND status = 'in_progress'", {
         ['@charidentifier'] = charIdentifier
     }, function(result)
-        if result and #result > 0 then
-            local ongoingCraftingList = {}
+        devPrint(_U('OngoingCraftingQuery') .. json.encode(result))
 
-            -- Loop through each crafting log result
+        local ongoingCraftingList = {}
+
+        if result and #result > 0 then
             for _, craftingLog in ipairs(result) do
                 local startTime = craftingLog.timestamp
                 local currentTime = os.time()
                 local elapsedTime = currentTime - startTime
                 local remainingTime = craftingLog.duration - elapsedTime
 
-                -- Debugging prints
                 devPrint(_U('CraftingLogID') .. craftingLog.id)
                 devPrint(_U('StartTime') .. startTime)
                 devPrint(_U('CurrentTime') .. currentTime)
                 devPrint(_U('ElapsedTime') .. elapsedTime)
                 devPrint(_U('RemainingTime') .. remainingTime)
 
-                -- If the crafting has been completed, update the status to 'completed'
                 if remainingTime <= 0 then
                     devPrint(_U('MarkAsCompleted') .. craftingLog.id)
                     exports.oxmysql:execute("UPDATE bcc_crafting_log SET status = 'completed', completed_at = NOW() WHERE id = @id", {
@@ -214,23 +212,12 @@ AddEventHandler('bcc-crafting:getOngoingCrafting', function()
                     remainingTime = 0
                 end
 
-                -- Insert crafting log details and remaining time into the list
-                table.insert(ongoingCraftingList, {
-                    craftingLog = craftingLog,
-                    remainingTime = remainingTime
-                })
+                table.insert(ongoingCraftingList, { craftingLog = craftingLog, remainingTime = remainingTime })
             end
-
-            -- Send the list of ongoing crafting items to the client
-            TriggerClientEvent('bcc-crafting:sendOngoingCraftingList', _source, ongoingCraftingList)
-        else
-            -- If no ongoing crafting found, send an empty list
-            devPrint("No ongoing crafting processes found for character ID: " .. charIdentifier)
-            TriggerClientEvent('bcc-crafting:sendOngoingCraftingList', _source, {})
         end
+        TriggerClientEvent('bcc-crafting:sendOngoingCraftingList', _source, ongoingCraftingList)
     end)
 end)
-
 -- Server-side function to retrieve completed crafting items
 RegisterNetEvent('bcc-crafting:getCompletedCrafting')
 AddEventHandler('bcc-crafting:getCompletedCrafting', function()
@@ -310,7 +297,7 @@ end)
 
 -- Get player's crafting data and send it to the client
 RegisterNetEvent('bcc-crafting:requestCraftingData')
-AddEventHandler('bcc-crafting:requestCraftingData', function()
+AddEventHandler('bcc-crafting:requestCraftingData', function(categories)
     local _source = source
     local Character = VORPcore.getUser(_source).getUsedCharacter
     local playerId = Character.charIdentifier -- Unique character identifier
@@ -320,10 +307,11 @@ AddEventHandler('bcc-crafting:requestCraftingData', function()
         local requiredXPForNextLevel = (level * 1000) -- Assume each level requires 1000 XP
         local xpToNextLevel = requiredXPForNextLevel - xp
 
-        -- Trigger the event to send the data to the client
-        TriggerClientEvent('bcc-crafting:sendCraftingData', _source, level, xp, xpToNextLevel)
+        -- Trigger the event to send the data to the client with the specific categories
+        TriggerClientEvent('bcc-crafting:sendCraftingData', _source, level, xpToNextLevel, categories)
     end)
 end)
+
 
 -- Function to update player's XP and level
 function AddPlayerCraftingXP(playerId, amount, callback)
@@ -345,7 +333,6 @@ function AddPlayerCraftingXP(playerId, amount, callback)
         end
     end)
 end
-
 -- Function to get player crafting data (XP and level)
 function GetPlayerCraftingData(playerId, callback)
     local param = { ['charidentifier'] = playerId }
@@ -355,7 +342,6 @@ function GetPlayerCraftingData(playerId, callback)
             local level = result[1].currentLevel
             callback(xp, level)
         else
-        
             MySQL.execute('INSERT INTO bcc_craft_progress (charidentifier, currentXP, currentLevel) VALUES (@charidentifier, 0, 1)', param)
             callback(0, 1)
         end
@@ -363,18 +349,33 @@ function GetPlayerCraftingData(playerId, callback)
 end
 
 -- Register each craftbook as a usable item
-for _, category in ipairs(Config.CraftingCategories) do
-    local craftBookItem = category.craftBookItem  -- Unique identifier for each category's craftbook
+for _, location in ipairs(Config.CraftingLocations) do
+    devPrint("Registering craftbooks for location: " .. json.encode(location.coords))
 
-    exports.vorp_inventory:registerUsableItem(craftBookItem, function(data)
-        local src = data.source  -- The player's server ID
-        Discord:sendMessage("Player ID: " .. src .. " used craftbook for category: " .. category.name)
+    for _, category in ipairs(location.categories) do
+        local craftBookItem = category.craftBookItem  -- Unique identifier for each category's craftbook
 
-        -- Optionally close inventory or perform other pre-menu actions here
-        exports.vorp_inventory:closeInventory(src)
-        -- Trigger a client event to handle the crafting menu display
-        TriggerClientEvent('bcc-crafting:openCategoryMenu', src, category.name)
-    end)
+        -- Check if the craftBookItem is not an empty string
+        if craftBookItem and craftBookItem ~= "" then
+            devPrint("Registering craftbook item: " .. craftBookItem .. " for category: " .. category.name)
+
+            -- Register the craftbook as a usable item in the inventory system
+            exports.vorp_inventory:registerUsableItem(craftBookItem, function(data)
+                local src = data.source  -- The player's server ID
+                devPrint("Player with ID " .. tostring(src) .. " used craftbook: " .. craftBookItem .. " for category: " .. category.name)
+
+                -- Optionally close inventory or perform other pre-menu actions here
+                devPrint("Closing inventory for player: " .. tostring(src))
+                exports.vorp_inventory:closeInventory(src)
+
+                -- Trigger a client event to handle the crafting menu display and flag it as opened by craftbook
+                devPrint("Triggering client event to open category menu: " .. category.name .. " for player ID: " .. tostring(src))
+                TriggerClientEvent('bcc-crafting:openCategoryMenu', src, category.name, true)  -- Passing true for 'showCraftBookcategory'
+            end)
+        else
+            devPrint("Skipping registration for empty craftBookItem in category: " .. category.name)
+        end
+    end
 end
 
 -- XP to level calculation function
@@ -390,9 +391,9 @@ function updateCraftingStatus(craftingId, status)
         ['completed_at'] = status == 'completed' and os.date('%Y-%m-%d %H:%M:%S') or nil
     }
     Discord:sendMessage("Crafting ID: " .. craftingId .. " status updated to " .. status)
-    
+
     MySQL.execute('UPDATE bcc_crafting_log SET status = @status, completed_at = @completed_at WHERE id = @id', params)
 end
 
-devPrint(_U('VersionCheck') .. GetCurrentResourceName())
+--devPrint(_U('VersionCheck') .. GetCurrentResourceName())
 BccUtils.Versioner.checkFile(GetCurrentResourceName(), 'https://github.com/BryceCanyonCounty/bcc-craft')

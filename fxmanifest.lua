@@ -5,10 +5,11 @@ lua54 'yes'
 
 author 'BCC Team'
 
-description 'Advanced Crafting Script using FeatherMenu.'
+description 'Advanced Craft Script using FeatherMenu.'
 
 shared_scripts {
-    'config.lua',
+    'configs/main.lua',
+    'configs/*lua',
     'locale.lua',
     'languages/*.lua'
 }
@@ -21,8 +22,8 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/dbUpdater.lua',
     'server/functions.lua',
+    'server/dbUpdater.lua',
     'server/server.lua'
 }
 
@@ -32,6 +33,7 @@ dependency {
     'vorp_character',
     'bcc-utils',
     'feather-menu',
+    'feather-progressbar',
 }
 
 version '0.0.3'
