@@ -9,7 +9,7 @@ CreateThread(function()
     local craftingprompt = CraftingMenuPrompt:RegisterPrompt(_U('PromptName'), 0x760A9C6F, 1, 1, true, 'hold', { timedeventhash = 'MEDIUM_TIMED_EVENT' })
 
     -- Iterate over CraftingLocations from the config
-    for _, location in pairs(Config.CraftingLocations) do
+    for _, location in pairs(CraftingLocations) do
         -- Ensure the 'coords' and 'NpcHeading' are arrays, so we can loop over multiple locations
         if type(location.coords) == "table" and type(location.NpcHeading) == "table" then
             for i, coord in ipairs(location.coords) do
@@ -44,7 +44,7 @@ CreateThread(function()
         Wait(1)
         local playerCoords = GetEntityCoords(PlayerPedId())
 
-        for _, location in pairs(Config.CraftingLocations) do
+        for _, location in pairs(CraftingLocations) do
             -- Loop through all coordinates for this location
             if type(location.coords) == "table" then
                 for _, coord in ipairs(location.coords) do

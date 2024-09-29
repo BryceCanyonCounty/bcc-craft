@@ -1,9 +1,13 @@
-Config.CraftingLocations = Config.CraftingLocations or {}
+CraftingLocations = CraftingLocations or {}
 
 local food = {
     {
-        coords = vector3(231.87, 530.09, 116.27),
-        NpcHeading = 168.10,
+        coords = {
+            vector3(231.87, 530.09, 116.27)
+        },
+        NpcHeading = {
+            168.10
+        },
         blip = {
             show = true,                         -- Toggle the blip on/off
             sprite = -1954662204,                -- Blip sprite (icon)
@@ -55,5 +59,5 @@ local food = {
 }
 -- Use table unpacking to add multiple locations
 for _, location in ipairs(food) do
-    table.insert(Config.CraftingLocations, location)
+    table.insert(CraftingLocations, location)
 end

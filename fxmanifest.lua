@@ -8,11 +8,7 @@ author 'BCC Team'
 description 'Advanced Craft Script using FeatherMenu.'
 
 shared_scripts {
-    'configs/main.lua',
-    'configs/food.lua',
-    'configs/weapons.lua',
-    'configs/others.lua',
-    'configs/ammo.lua',
+    'configs/*.lua',
     'locale.lua',
     'languages/*.lua'
 }
@@ -39,4 +35,4 @@ dependency {
     'feather-progressbar',
 }
 
-version '0.0.5'
+version '0.0.6'

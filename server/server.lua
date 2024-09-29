@@ -349,7 +349,7 @@ function GetPlayerCraftingData(playerId, callback)
 end
 
 -- Register each craftbook as a usable item
-for _, location in ipairs(Config.CraftingLocations) do
+for _, location in ipairs(CraftingLocations) do
     devPrint("Registering craftbooks for location: " .. json.encode(location.coords))
 
     for _, category in ipairs(location.categories) do
