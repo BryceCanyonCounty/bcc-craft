@@ -8,7 +8,7 @@ author 'BCC Team'
 description 'Advanced Craft Script using FeatherMenu.'
 
 shared_scripts {
-    'configs/main.lua',
+    'main.lua',
     'configs/*lua',
     'locale.lua',
     'languages/*.lua'
