@@ -6,7 +6,7 @@ function openCraftingCategoryMenu(categoryName, currentLocationCategories)
 
     -- Find the category data in the crafting locations
     local category = nil
-    for _, location in ipairs(Config.CraftingLocations) do
+    for _, location in ipairs(CraftingLocations) do
         for _, categoryData in ipairs(location.categories) do
             devPrint("Checking category: " .. categoryData.name)
             if categoryData.name == categoryName then
