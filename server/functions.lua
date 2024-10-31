@@ -18,28 +18,33 @@ BCCCallbacks.Registered = {}
 -- Function to register a callback with a unique name
 function BCCCallbacks.Register(name, callback)
     if BCCCallbacks.Registered[name] then
-        print("^1[ERROR] Callback with name '" .. name .. "' already exists!^0")
+        devPrint("^1[ERROR] Callback with name '" .. name .. "' already exists!^0")
         return
     end
 
     BCCCallbacks.Registered[name] = callback
-    print("^2[INFO] BCC Callback '" .. name .. "' registered successfully.^0")
+    devPrint("^2[INFO] BCC Callback '" .. name .. "' registered successfully.^0")
 end
 
--- Function to trigger a registered callback on the server
 RegisterNetEvent('BCCCallbacks:Request')
 AddEventHandler('BCCCallbacks:Request', function(name, requestId, ...)
     local src = source
     local callback = BCCCallbacks.Registered[name]
+    local args = { ... }
+
+    -- Check and log data to detect issues
+    if args[1] then
+        --print("[DEBUG] Server received data:", json.encode(args[1]))
+    else
+        --print("[ERROR] Server received empty or nil data.")
+    end
 
     if callback then
-        -- Execute the callback and send the result back to the client
         callback(src, function(response)
             TriggerClientEvent('BCCCallbacks:Response', src, requestId, response)
-        end, ...)
+        end, table.unpack(args))
     else
-        -- If the callback does not exist, log an error
-        print("^1[ERROR] No callback found for '" .. name .. "'^0")
-        TriggerClientEvent('BCCCallbacks:Response', src, requestId, nil) -- Return a null response
+        print("[ERROR] No callback registered with name:", name)
+        TriggerClientEvent('BCCCallbacks:Response', src, requestId, nil)
     end
 end)
