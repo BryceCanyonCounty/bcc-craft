@@ -61,5 +61,10 @@ Locales["en_lang"] = {
     EnterAmount = 'Enter Amount to Craft',
     AmountPlaceholder = 'Type amount',
     ConfirmCraft = 'Craft ',
-    InvalidAmount = 'Invalid amount entered. Please enter a number greater than 0.'
+    InvalidAmount = 'Invalid amount entered. Please enter a number greater than 0.',
+    CollectedPartially = 'You have collected part of the crafted item.',
+    CannotCraftOverLimit = 'You cannot craft more than the item limit, try a smaller amount.',
+    CraftingLimit = 'Crafting limit.',
+    CollectedWeapon = 'You have collected a crafted weapon: ',
+    CannotCarryMoreWeapons = 'Cannot carry more weapons'
 }

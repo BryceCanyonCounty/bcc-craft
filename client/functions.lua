@@ -52,21 +52,29 @@ local function generateRequestId()
     return math.random(10000, 99999) .. GetGameTimer()
 end
 
--- Function to trigger the callback from the client-side
+-- Table to map requestIds to callbacks
+local callbackMap = {}
+
 BCCCallbacks.Trigger = function(name, cb, ...)
     local requestId = generateRequestId()
+    callbackMap[requestId] = cb -- Map the requestId to the callback
 
-    -- Register the event listener for receiving the response
-    RegisterNetEvent('BCCCallbacks:Response')
-    AddEventHandler('BCCCallbacks:Response', function(respRequestId, response)
-        if requestId == respRequestId then
-            cb(response) -- Execute the callback with the server response
-        end
-    end)
+    local args = { ... }
+    --print("[DEBUG] Triggering callback with name:", name, "Request ID:", requestId, "Data:", json.encode(args))
 
     -- Send the request to the server with the request ID
     TriggerServerEvent('BCCCallbacks:Request', name, requestId, ...)
 end
+
+-- Generic handler for all responses
+RegisterNetEvent('BCCCallbacks:Response')
+AddEventHandler('BCCCallbacks:Response', function(requestId, response)
+    if callbackMap[requestId] then
+        callbackMap[requestId](response) -- Execute the callback
+        callbackMap[requestId] = nil     -- Clean up the callback after use
+    end
+end)
+
 
 -- Handle player death and close menu
 function HandlePlayerDeathAndCloseMenu()
@@ -76,7 +84,7 @@ function HandlePlayerDeathAndCloseMenu()
     if IsEntityDead(playerPed) then
         devPrint("Player is dead, closing the crafting menu.")
         BCCCraftingMenu:Close() -- Close the menu if the player is dead
-        return true            -- Return true to indicate the player is dead and the menu was closed
+        return true             -- Return true to indicate the player is dead and the menu was closed
     end
 
     -- If the player is not dead, start monitoring for death while the menu is open
@@ -85,9 +93,9 @@ function HandlePlayerDeathAndCloseMenu()
             if IsEntityDead(playerPed) then
                 devPrint("Player died while in the menu, closing the crafting menu.")
                 BCCCraftingMenu:Close() -- Close the menu if the player dies while in the menu
-                break                 -- Stop the loop since the player is dead and the menu is closed
+                break                   -- Stop the loop since the player is dead and the menu is closed
             end
-            Wait(1000)                 -- Check every second
+            Wait(1000)                  -- Check every second
         end
     end)
 
@@ -97,14 +105,34 @@ end
 
 -- Function to trigger the crafting attempt
 function attemptCraftItem(item, amount)
-    item.itemAmount = tonumber(amount)  -- Set the amount to craft
+    item.itemAmount = tonumber(amount) -- Set the amount to craft
     BCCCallbacks.Trigger('bcc-crafting:attemptCraft', function(success)
         if success then
-            print("Crafting started successfully.")
+            devPrint("Crafting started successfully.")
         else
-            print("Failed to start crafting.")
+            devPrint("Failed to start crafting.")
         end
     end, item)
+end
+
+-- Function to fetch item limit
+function fetchItemLimit(itemName, callback)
+    devPrint("Requesting item limit for:", tostring(itemName)) -- Check `itemName` before sending
+
+    if not itemName or itemName == "" then
+        devPrint("Error: itemName is nil or empty in fetchItemLimit")
+        callback("N/A") -- Immediately return "N/A" if no valid itemName
+        return
+    end
+
+    -- Use a wrapped callback to add intermediate debugging
+    local wrappedCallback = function(itemLimit)
+        devPrint("Wrapped callback received item limit for", tostring(itemName), ":", tostring(itemLimit))
+        callback(itemLimit)
+    end
+
+    -- Trigger the server callback
+    BCCCallbacks.Trigger("bcc-crafting:getItemLimit", wrappedCallback, itemName)
 end
 
 -- Function to calculate the remaining XP needed for the next level
