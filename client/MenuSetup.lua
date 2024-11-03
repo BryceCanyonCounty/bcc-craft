@@ -113,34 +113,50 @@ end)
 function openCraftingItemMenu(item, categoryName, itemLimit)
     devPrint("Opening crafting item menu: " .. tostring(item.itemLabel) .. " in category: " .. tostring(categoryName))
 
-    local requiredItemsHTML = ""
-    for _, reqItem in ipairs(item.requiredItems) do
-        devPrint("Required item for crafting: " .. reqItem.itemLabel .. " with name: '" .. reqItem.itemName .. "'")
-        requiredItemsHTML = requiredItemsHTML ..
-            string.format("<li>- %s x%d</li>", reqItem.itemLabel, tonumber(reqItem.itemCount or 0))
-    end
-
     local imgPath = 'nui://vorp_inventory/html/img/items/' .. item.itemName .. '.png'
 
-    -- Create the HTML content for crafting item details with centered image
+    local requiredItemsHTML = ""
+    for _, reqItem in ipairs(item.requiredItems) do
+        local reqImgPath = 'nui://vorp_inventory/html/img/items/' .. reqItem.itemName .. '.png'
+        requiredItemsHTML = requiredItemsHTML .. string.format([[
+            <li style="display: flex; align-items: center; margin-bottom: 8px;">
+                <img src="%s" style="width: 48px; height: 48px; margin-right: 8px; border: 1px solid #8B4513; border-radius: 4px;" alt="%s">
+                <span>%s x%d</span>
+            </li>
+        ]], reqImgPath, reqItem.itemLabel, reqItem.itemLabel, tonumber(reqItem.itemCount) or 0)
+    end
+    
     local htmlContent = string.format([[
-        <div style="text-align:center; margin: 20px; font-family: 'Georgia', serif; color: #5A3A29;">
-            <img src="%s" style="width: 100px; height: 100px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" alt="%s">
-            <p style="font-size:20px; margin-bottom: 10px; font-style: italic;">%s <strong style="color:#8B4513;">%d</strong></p>
-            <p style="font-size:20px; margin-bottom: 10px; font-style: italic;">%s <strong style="color:#B22222;">%d %s</strong></p>
-            <p style="font-size:20px; margin-bottom: 10px; font-weight: bold; color:#8A2BE2;">%s <strong style="color:#FFD700;">%d XP</strong></p>
-            <p style="font-size:20px; margin-bottom: 10px; font-weight: bold; color:#FF4500;">%s <strong style="color:#FF6347;">%s</strong></p>
-            <div style="font-size:20px; margin-bottom: 10px; font-weight: bold; text-transform: uppercase;">%s</div>
-            <ul style="list-style-type:square; font-size:18px; text-align:left; display:inline-block; padding: 0; margin: 0;">
-                %s
-            </ul>
+        <div style="padding: 20px; font-family: 'Georgia', serif; color: #4E342E; max-width: 500px; margin: 0 auto;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <!-- Image Section -->
+                <div style="flex-shrink: 0; text-align: center;">
+                    <img src="%s" style="width: 120px; height: 120px; border: 1px solid #8B4513; border-radius: 3%%;" alt="%s">
+                </div>
+                <!-- Details Section -->
+                <div style="flex-grow: 1;">
+                    <p style="font-size: 18px; margin-bottom: 10px;"><strong style="color: #8B4513;">%s</strong> %d</p>
+                    <p style="font-size: 18px; margin-bottom: 10px;"><strong style="color: #B22222;">%s</strong> %d %s</p>
+                    <p style="font-size: 18px; margin-bottom: 10px;"><strong style="color: #FFD700;">%s</strong> %d XP</p>
+                    <p style="font-size: 18px; margin-bottom: 10px;"><strong style="color: #FF6347;">%s</strong> %s</p>
+                    <p style="font-size: 18px; margin-bottom: 10px;"><strong style="color: #DA70D6;">%s</strong> %d</p>
+                </div>
+            </div>
+            <!-- Required Items Section -->
+            <div style="border-top: 2px solid #8B4513; padding-top: 15px; margin-top: 20px;">
+                <h3 style="font-size: 20px; color: #4B0082; text-transform: uppercase; font-weight: bold; margin-bottom: 10px;">%s</h3>
+                <ul style="padding: 0; margin: 0; font-size: 16px; line-height: 1.6;">
+                    %s
+                </ul>
+            </div>
         </div>
     ]],
         imgPath, item.itemLabel,
-        _U('RequiredLevel'), tonumber(item.requiredLevel),
-        _U('CraftTimeRemains'), tonumber(item.duration), _U('seconds'),
-        _U('RewardXp'), tonumber(item.rewardXP),
-        _U('CraftingLimit'), itemLimit, -- Use the item limit here
+        _U('RequiredLevel'), tonumber(item.requiredLevel) or 1,
+        _U('CraftTimeRemains'), tonumber(item.duration) or 0, _U('seconds'),
+        _U('RewardXp'), tonumber(item.rewardXP) or 0,
+        _U('CraftingLimit'), itemLimit or "N/A",
+        _U('CraftAmount'), tonumber(item.itemAmount) or 1,
         _U('RequiredItems'),
         requiredItemsHTML
     )
@@ -150,6 +166,11 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
         value = item.itemLabel,
         slot = 'header',
         style = {}
+    })
+
+    itemMenu:RegisterElement('line', {
+        style = {},
+        slot = "header"
     })
 
     itemMenu:RegisterElement("html", {
@@ -178,7 +199,7 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
         if isWeapon then
             -- If the item is a weapon, trigger crafting directly with a default amount of 1
             devPrint("Crafting weapon directly:", item.itemName)
-            attemptCraftItem(item, 1)
+            attemptCraftItem(item, Config.WeaponLimit or 1)
         else
             -- For regular items, open the crafting amount input menu
             devPrint("Opening amount input for regular item:", item.itemName)
@@ -220,7 +241,7 @@ AddEventHandler('bcc-crafting:openmenu', function(categories)
 end)
 
 -- Open crafting amount input menu
-function openCraftingAmountInput(item, categoryName) -- Add categoryName as a parameter
+function openCraftingAmountInput(item, categoryName, currentLocationCategories) -- Add categoryName as a parameter
     local inputValue = nil
     local craftingAmountMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:amountInput")
 
@@ -258,7 +279,7 @@ function openCraftingAmountInput(item, categoryName) -- Add categoryName as a pa
         style = {}
     }, function()
         -- Ensure inputValue is a valid number and greater than 0
-        if inputValue and tonumber(inputValue) and tonumber(inputValue) > 0 then
+        if inputValue and tonumber(inputValue) > 0 then
             attemptCraftItem(item, tonumber(inputValue)) -- Convert inputValue to a number and pass it as amount
         else
             devPrint("Invalid amount entered.")
@@ -448,7 +469,7 @@ function startCrafting(item)
     openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories)
 end
 
--- Function to display the list of ongoing crafting processes
+--- Function to display the list of ongoing crafting processes
 function openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories)
     devPrint("Opening progress menu for ongoing crafting processes.")
 
@@ -470,21 +491,21 @@ function openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories
 
         -- Loop through each ongoing crafting item
         for _, craftingData in ipairs(ongoingCraftingList) do
-            local craftingLog = craftingData.craftingLog
-            local remainingTime = craftingData.remainingTime
+            local craftingLog = craftingData.craftingLog or {}
+            local remainingTime = craftingData.remainingTime or 0
+            local itemAmount = craftingLog.itemAmount or 0
             local formattedTime = formatTime(remainingTime)
 
-            -- Generate the HTML content for each crafting item
+            -- Generate the HTML content for each crafting item, with default values if nil
             craftingListHtml = craftingListHtml .. string.format([[
                 <div style="text-align:center; margin: 20px 0; font-family: 'Crimson Text', serif; color: #4E342E;">
                     <p style="font-size:20px; font-weight: bold;">%s <strong>x%d</strong></p>
                     <p style="font-size:18px; color: #8A2BE2;">%s <strong>%s</strong></p>
                 </div>
             ]],
-                craftingLog.itemLabel, craftingLog.itemAmount, _U('remainingTime'), formattedTime)
+                craftingLog.itemLabel or "Unknown Item", itemAmount, _U('remainingTime'), formattedTime)
 
-            devPrint("Ongoing crafting: " ..
-                craftingLog.itemLabel .. " x" .. craftingLog.itemAmount .. ", Remaining Time: " .. formattedTime)
+            devPrint("Ongoing crafting: " .. (craftingLog.itemLabel or "Unknown Item") .. " x" .. itemAmount .. ", Remaining Time: " .. formattedTime)
         end
 
         -- Register the HTML with the menu

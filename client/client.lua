@@ -29,8 +29,7 @@ CreateThread(function()
 
                 -- Handle Crafting NPCs
                 if location.npc and location.npc.show then
-                    craftingped = BccUtils.Ped:Create(location.npc.model, coord.x, coord.y, coord.z - 1.0, 0, 'world',
-                        false)
+                    craftingped = BccUtils.Ped:Create(location.npc.model, coord.x, coord.y, coord.z -1, 0, 'world',false)
                     CreatedNpc[#CreatedNpc + 1] = craftingped
                     craftingped:Freeze()
                     craftingped:SetHeading(heading)

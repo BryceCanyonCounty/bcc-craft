@@ -18,7 +18,7 @@ CreateThread(function()
     ]])
 
     -- Create the bcc_craft_progress table if it doesn't exist
-    MySQL.query.await([[
+    MySQL.query.await([[ 
         CREATE TABLE IF NOT EXISTS `bcc_craft_progress` (
             `charidentifier` varchar(50) NOT NULL,
             `currentXP` int(11) NOT NULL DEFAULT 0,
@@ -27,8 +27,20 @@ CreateThread(function()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
     ]])
 
+    -- Add the lastLevel column if it doesn't already exist
+    MySQL.query.await([[ 
+        ALTER TABLE `bcc_craft_progress`
+        ADD COLUMN IF NOT EXISTS `lastLevel` int(11) NOT NULL DEFAULT 1;
+    ]])
+
+    -- Update lastLevel to match currentLevel for all existing records
+    MySQL.query.await([[ 
+        UPDATE `bcc_craft_progress`
+        SET `lastLevel` = `currentLevel`;
+    ]])
+
     -- Inserting craftbooks into the items table only if they do not exist
-    MySQL.query.await([[
+    MySQL.query.await([[ 
         INSERT INTO `items` (`item`, `label`, `limit`, `can_remove`, `type`, `usable`, `desc`) 
         VALUES 
         ('food_craftbook', 'Food Craftbook', 1, 1, 'item_standard', 1, 'Used to open the food crafting menu.'),
