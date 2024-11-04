@@ -1,4 +1,5 @@
-Locales = {} -- Credit to bcc-boats for this
+Locales = {}
+
 local translationCache = {} -- Cache for translations
 
 function _(str, ...) -- Translate string
@@ -13,9 +14,17 @@ function _(str, ...) -- Translate string
     if Locales[lang] ~= nil then
         if Locales[lang][str] ~= nil then
             translationCache[str] = Locales[lang][str] -- Cache the translation for faster future access
-            return string.format(Locales[lang][str], ...)
+            if ... then
+                return string.format(Locales[lang][str], ...)
+            else
+                return Locales[lang][str]
+            end
         elseif Locales[defaultLang] ~= nil and Locales[defaultLang][str] ~= nil then
-            return string.format(Locales[defaultLang][str], ...) -- Fallback to default language
+            if ... then
+                return string.format(Locales[defaultLang][str], ...)
+            else
+                return Locales[defaultLang][str]
+            end
         else
             return 'Translation [' .. lang .. '][' .. str .. '] and fallback [' .. defaultLang .. '] do not exist'
         end

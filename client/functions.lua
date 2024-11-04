@@ -135,10 +135,21 @@ function fetchItemLimit(itemName, callback)
     BCCCallbacks.Trigger("bcc-crafting:getItemLimit", wrappedCallback, itemName)
 end
 
--- Function to calculate the remaining XP needed for the next level
+-- Function to calculate the remaining XP needed for the next level based on the level thresholds
 function GetRemainingXP(currentXP, level)
-    local totalXPForNextLevel = (level * 1000) -- Assuming 1000 XP is needed per level
-    return totalXPForNextLevel - currentXP
+    local totalXPForNextLevel = 0
+
+    for _, threshold in ipairs(Config.LevelThresholds) do
+        -- Find the correct level range
+        if level >= threshold.minLevel and level <= threshold.maxLevel then
+            -- Calculate the required XP for the next level in the current range
+            totalXPForNextLevel = (level - threshold.minLevel + 1) * threshold.xpPerLevel
+            break
+        end
+    end
+
+    -- Return the difference between required XP for next level and current XP
+    return math.max(0, totalXPForNextLevel - currentXP)
 end
 
 -- Helper function to format time into days, hours, minutes, and seconds
