@@ -7,17 +7,17 @@ MiniGame = exports["bcc-minigames"].initiate()
 
 BCCCraftingMenu = FeatherMenu:RegisterMenu("bcc:crafting:mainmenu",
     {
-        top = "5%",
-        left = "5%",
-        ["720width"] = "500px",
-        ["1080width"] = "600px",
-        ["2kwidth"] = "700px",
-        ["4kwidth"] = "900px",
+        top = '3%',
+        left = '3%',
+        ['720width'] = '400px',
+        ['1080width'] = '500px',
+        ['2kwidth'] = '600px',
+        ['4kwidth'] = '800px',
         style = {},
         contentslot = {
             style = {
-                ["height"] = "450px",
-                ["min-height"] = "250px"
+                ['height'] = '350px',
+                ['min-height'] = '250px'
             }
         },
         draggable = true

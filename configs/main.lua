@@ -32,6 +32,10 @@ Config = {
         { minLevel = 181, maxLevel = 190, xpPerLevel = 19000 },
         { minLevel = 191, maxLevel = 200, xpPerLevel = 20000 }
     },    
+
+    -- Adjust this based on your server's maximum allowed weapon count
+    WeaponsLimit = 1,      -- Maximum weapons to craft at the time
+    maxWeaponsAllowed = 5, -- Maximum weapons to collect when craft finished
     
     -- Image settings for the crafting menu
     UseImageAtBottomMenu = false,

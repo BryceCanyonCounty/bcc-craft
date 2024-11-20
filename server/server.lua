@@ -440,10 +440,10 @@ end)
 
 -- Function to update player's XP and level incrementally
 function AddPlayerCraftingXP(playerId, amount, callback)
-    devPrint("Adding XP for player:" .. playerId .. "Amount:" .. amount)
+    devPrint("Adding XP for player:" .. playerId .. " Amount:" .. amount)
 
     GetPlayerCraftingData(playerId, function(xp, lastLevel)
-        devPrint("Current XP:", xp, "Last Level:" .. lastLevel)
+        devPrint("Current XP:", xp, " Last Level:" .. lastLevel)
 
         xp = xp + amount
         local newLevel, remainingXP = CalculateIncrementalLevel(xp, lastLevel)
@@ -463,12 +463,12 @@ function AddPlayerCraftingXP(playerId, amount, callback)
         MySQL.execute(
             'UPDATE bcc_craft_progress SET currentXP = @currentXP, currentLevel = @currentLevel, lastLevel = @lastLevel WHERE charidentifier = @charidentifier',
             param, function(rowsAffected)
-                devPrint("Database Update Result:" .. json.encode(rowsAffected) .. "rows affected")
+                devPrint("Database Update Result:" .. json.encode(rowsAffected) .. " rows affected")
             end)
 
         -- Notify callback only if there is a level increase
         if newLevel > lastLevel then
-            devPrint("Level increased! New Level:", newLevel)
+            devPrint("Level increased! New Level:" .. newLevel)
             callback(newLevel)
         else
             devPrint("No level increase.")
@@ -526,9 +526,17 @@ function CalculateIncrementalLevel(xp, lastLevel)
         if level >= threshold.minLevel and level <= threshold.maxLevel then
             -- Calculate required XP for current range
             local xpPerLevel = threshold.xpPerLevel
+            
+            -- Adjust level progression to ensure it moves correctly within each threshold
             while remainingXP >= xpPerLevel and level < threshold.maxLevel do
                 remainingXP = remainingXP - xpPerLevel
                 level = level + 1
+            end
+            
+            -- Check if we have reached the maximum level for this threshold range and move to the next
+            if level == threshold.maxLevel and remainingXP >= xpPerLevel then
+                -- Remaining XP should carry over to the next threshold, so break to exit and loop again
+                break
             end
         end
     end
