@@ -1,11 +1,19 @@
 local activeCrafting = {}
 
--- Register a callback for crafting attempts
-BCCCallbacks.Register('bcc-crafting:attemptCraft', function(source, cb, item)
+BccUtils.RPC:Register('bcc-crafting:AttemptCraft', function(params, cb, source)
+    local item = params.item
+    if not item then
+        devPrint("[ERROR] Missing item data in crafting attempt.")
+        return cb(false)
+    end
+
     local Character = VORPcore.getUser(source).getUsedCharacter
+    if not Character then
+        devPrint("[ERROR] Failed to retrieve character data for source: " .. tostring(source))
+        return cb(false)
+    end
     local playerId = Character.charIdentifier
     local playerJob = Character.job
-    local jobGrade = Character.jobGrade
 
     local inputAmount = item.itemAmount or 1 -- Input amount from the player, default to 1 if not provided
     local itemConfigAmount = getConfigItemAmount(item.itemName) * inputAmount
@@ -15,12 +23,11 @@ BCCCallbacks.Register('bcc-crafting:attemptCraft', function(source, cb, item)
         devPrint("Checking job requirements for: " .. item.itemLabel)
         local hasValidJob = false
         for _, allowedJob in pairs(item.requiredJobs) do
-            devPrint("Allowed job: " .. allowedJob.name .. ", Grade required: " .. allowedJob.grade)
-            devPrint("Player job: " .. playerJob .. ", Player job grade: " .. jobGrade)
+            devPrint("Allowed job: " .. allowedJob)
 
-            if playerJob == allowedJob.name and jobGrade >= allowedJob.grade then
+            if playerJob == allowedJob then
                 hasValidJob = true
-                devPrint("Player meets the job requirements for: " .. allowedJob.name)
+                devPrint("Player meets the job requirements for: " .. allowedJob)
                 break
             end
         end
@@ -89,23 +96,79 @@ BCCCallbacks.Register('bcc-crafting:attemptCraft', function(source, cb, item)
         for _, reqItem in pairs(item.requiredItems) do
             if reqItem.removeItem then
                 local requiredItemCount = reqItem.itemCount * inputAmount
-                devPrint("[DEBUG] Attempting to remove item:" .. reqItem.itemName)
+                devPrint("[DEBUG] Attempting to remove item: " ..
+                tostring(reqItem.itemName) .. " | Required Count: " .. tostring(requiredItemCount))
+
+                -- Attempt to remove the item
                 local subItem = exports.vorp_inventory:subItem(source, reqItem.itemName, requiredItemCount,
                     reqItem.metadata or {})
                 if not subItem then
-                    devPrint("[ERROR] Failed to remove item:" .. reqItem.itemName .. "Required:" .. inputAmount)
+                    devPrint("[ERROR] Failed to remove item: " ..
+                    tostring(reqItem.itemName) .. " | Required: " .. tostring(requiredItemCount))
                     VORPcore.NotifyRightTip(source, _U('RemoveItemFailed', reqItem.itemLabel), 4000)
                     cb(false)
                     return
                 else
-                    devPrint("[DEBUG] Successfully removed item:" ..
-                        reqItem.itemName .. " | Amount removed:" .. requiredItemCount)
+                    devPrint("[DEBUG] Successfully removed item: " ..
+                    tostring(reqItem.itemName) .. " | Amount Removed: " .. tostring(requiredItemCount))
                 end
             else
-                devPrint("[DEBUG] Item not removed as 'removeItem' is set to false for item:" .. reqItem.itemLabel)
-                devPrint("Item not removed as 'removeItem' is false: " .. reqItem.itemLabel)
+                devPrint("[DEBUG] Item flagged as non-removable, processing durability for: " ..
+                tostring(reqItem.itemName))
+
+                -- Fetch the item
+                local item = exports.vorp_inventory:getItem(source, reqItem.itemName)
+                if not item then
+                    devPrint("[ERROR] Item not found in inventory: " .. tostring(reqItem.itemName))
+                    VORPcore.NotifyRightTip(source, "Item not found: " .. reqItem.itemLabel, 4000)
+                    cb(false)
+                    return
+                end
+
+                local maxDurability = 100
+                local useDurability = 1
+
+                -- Check if item metadata exists
+                if not next(item.metadata) then
+                    devPrint("[DEBUG] No durability metadata found for item: " ..
+                    tostring(reqItem.itemName) .. ". Initializing durability.")
+
+                    -- Initialize durability
+                    local newData = {
+                        description = "Durability " .. (maxDurability - useDurability) .. '%',
+                        durability = maxDurability - useDurability,
+                        id = item.id
+                    }
+                    exports.vorp_inventory:setItemMetadata(source, item.id, newData, 1)
+                    devPrint("[DEBUG] Durability initialized for item: " ..
+                    tostring(reqItem.itemName) .. " | New Durability: " .. tostring(maxDurability - useDurability))
+                else
+                    -- Handle durability reduction
+                    local currentDurability = item.metadata.durability
+                    devPrint("[DEBUG] Current durability for item: " ..
+                    tostring(reqItem.itemName) .. " | Durability: " .. tostring(currentDurability))
+
+                    if currentDurability <= useDurability then
+                        -- Remove item if durability is depleted
+                        exports.vorp_inventory:subItemID(source, item.id)
+                        Core.NotifyRightTip(source, "Your crafting tool has broken", 4000)
+                        devPrint("[DEBUG] Item broken and removed: " .. tostring(reqItem.itemName))
+                    else
+                        -- Update durability metadata
+                        local newDurability = currentDurability - useDurability
+                        local newData = {
+                            description = "Durability " .. newDurability .. '%',
+                            durability = newDurability,
+                            id = item.id
+                        }
+                        exports.vorp_inventory:setItemMetadata(source, item.id, newData, 1)
+                        devPrint("[DEBUG] Updated durability for item: " ..
+                        tostring(reqItem.itemName) .. " | New Durability: " .. tostring(newDurability))
+                    end
+                end
             end
         end
+
 
         -- Prepare data for database insertion
         local craftingData = {
@@ -131,7 +194,7 @@ BCCCallbacks.Register('bcc-crafting:attemptCraft', function(source, cb, item)
                         startTime = os.time(),
                         duration = totalDuration
                     }
-                    TriggerClientEvent('bcc-crafting:startCrafting', source, item)
+                    BccUtils.RPC:Call("bcc-crafting:StartCrafting", { item = item }, nil, source)
                     Discord:sendMessage("Player ID: " ..
                         tostring(source) ..
                         " started crafting " ..
@@ -175,47 +238,45 @@ AddEventHandler('bcc-crafting:getOngoingCrafting', function()
         end)
 end)
 
--- Server-side function to retrieve completed crafting items
-RegisterNetEvent('bcc-crafting:getCompletedCrafting')
-AddEventHandler('bcc-crafting:getCompletedCrafting', function()
-    local _source = source
-    local Character = VORPcore.getUser(_source).getUsedCharacter
-    local charIdentifier = Character.charIdentifier -- Character identifier
+BccUtils.RPC:Register("bcc-crafting:GetCompletedCrafting", function(_, cb, source)
+    -- Retrieve character information
+    local Character = VORPcore.getUser(source).getUsedCharacter
+    if not Character then
+        devPrint("[ERROR] Failed to retrieve character for source: " .. tostring(source))
+        cb(false)
+        return
+    end
 
+    local charIdentifier = Character.charIdentifier
+
+    -- Query the database for completed crafting items
     MySQL.query("SELECT * FROM bcc_crafting_log WHERE charidentifier = @charidentifier AND status = 'completed'",
         { ['@charidentifier'] = charIdentifier }, function(completedResult)
-            if completedResult then
-                local resultLength = 0
-                for k, v in pairs(completedResult) do
-                    resultLength = resultLength + 1
-                end
-                if resultLength > 0 then
-                    -- Send the completed crafting list to the client
-                    TriggerClientEvent('bcc-crafting:sendCompletedCraftingList', _source, completedResult)
-                else
-                    devPrint("completedResult length is not greater than 0")
-                end
+            if completedResult and #completedResult > 0 then
+                devPrint("[DEBUG] Completed crafting data found for character: " .. tostring(charIdentifier))
+                cb(completedResult)
             else
-                --devPrint("completedResult is nil")
-                devPrint(_U('NoCompletedCrafting') .. charIdentifier)
+                devPrint("[DEBUG] No completed crafting data found for character: " .. tostring(charIdentifier))
+                cb(false)
             end
-        end)
+        end
+    )
 end)
 
 -- Register the callback for collecting crafted items
-BCCCallbacks.Register('bcc-crafting:collectCraftedItem', function(source, cb, craftingLog)
+BccUtils.RPC:Register('bcc-crafting:collectCraftedItem', function(params, cb, source)
+    if not params or not params.craftingLog then
+        devPrint("[ERROR] Missing parameters or crafting log.")
+        cb(false)
+        return
+    end
+
+    local craftingLog = params.craftingLog
     -- Get Character Information
     local Character = VORPcore.getUser(source).getUsedCharacter
     local playerId = Character.charIdentifier
     local firstname = Character.firstname
     local lastname = Character.lastname
-
-    -- Validate craftingLog and itemName
-    if not craftingLog or not craftingLog.itemName then
-        devPrint("[ERROR] craftingLog or itemName is missing.")
-        cb(false)
-        return
-    end
 
     -- Basic item details
     local itemName = craftingLog.itemName
@@ -298,11 +359,13 @@ BCCCallbacks.Register('bcc-crafting:collectCraftedItem', function(source, cb, cr
                         ['@id'] = craftingLog.id
                     })
                     devPrint("[DEBUG] Updated crafting log with remaining amount: " .. remainingAmount)
-                    VORPcore.NotifyRightTip(source, _U('CollectedPartially') .. addableAmount .. "x " .. itemLabel .. ".", 4000)
+                    VORPcore.NotifyRightTip(source, _U('CollectedPartially') .. addableAmount .. "x " .. itemLabel .. ".",
+                        4000)
                 else
                     MySQL.execute('DELETE FROM bcc_crafting_log WHERE id = @id', { ['@id'] = craftingLog.id })
                     devPrint("[DEBUG] Crafting log entry deleted for item: " .. itemName)
-                    VORPcore.NotifyRightTip(source, _U('CollectedCraftedItem') .. addableAmount .. "x " .. itemLabel .. ".", 4000)
+                    VORPcore.NotifyRightTip(source,
+                        _U('CollectedCraftedItem') .. addableAmount .. "x " .. itemLabel .. ".", 4000)
                 end
 
                 -- Award XP for crafting items
@@ -357,11 +420,13 @@ BCCCallbacks.Register('bcc-crafting:collectCraftedItem', function(source, cb, cr
                             ['@id'] = craftingLog.id
                         })
                         devPrint("[DEBUG] Updated crafting log with remaining amount: " .. remainingAmount)
-                        VORPcore.NotifyRightTip(source, _U('CollectedPartially') .. partialAmount .. "x " .. itemLabel .. ".", 4000)
+                        VORPcore.NotifyRightTip(source,
+                            _U('CollectedPartially') .. partialAmount .. "x " .. itemLabel .. ".", 4000)
                     else
                         MySQL.execute('DELETE FROM bcc_crafting_log WHERE id = @id', { ['@id'] = craftingLog.id })
                         devPrint("[DEBUG] Crafting log entry deleted for item: " .. itemName)
-                        VORPcore.NotifyRightTip(source, _U('CollectedCraftedItem') .. partialAmount .. "x " .. itemLabel .. ".", 4000)
+                        VORPcore.NotifyRightTip(source,
+                            _U('CollectedCraftedItem') .. partialAmount .. "x " .. itemLabel .. ".", 4000)
                     end
 
                     -- Award XP for crafting items
@@ -415,60 +480,112 @@ function getAvailableSpace(source, itemName)
     return spaceAvailable
 end
 
-RegisterNetEvent('bcc-crafting:requestCraftingData')
-AddEventHandler('bcc-crafting:requestCraftingData', function(categories)
-    local _source = source
-    local Character = VORPcore.getUser(_source).getUsedCharacter
-    local playerId = Character.charIdentifier
+BccUtils.RPC:Register("bcc-crafting:GetCraftingData", function(params, cb, recSource)
+    print("[DEBUG] Received RPC request for crafting data")
+    local user = VORPcore.getUser(recSource)
+    if not user then
+        print("[DEBUG] No user found for source: " .. tostring(recSource))
+        return cb(false)
+    end
 
-    GetPlayerCraftingData(playerId, function(xp, level)
-        -- Calculate required XP for the next level based on the level range in Config
-        local requiredXPForNextLevel = 0
+    local char = user.getUsedCharacter
+    if not char then
+        print("[DEBUG] No character data found for user.")
+        return cb(false)
+    end
+
+    local playerId = char.charIdentifier
+    print("[DEBUG] Character ID: " .. tostring(playerId))
+
+    -- Query the database directly
+    MySQL.query('SELECT currentXP, currentLevel FROM bcc_craft_progress WHERE charidentifier = @charidentifier', {
+        ['@charidentifier'] = playerId
+    }, function(result)
+        if not result or #result == 0 then
+            print("[DEBUG] No crafting data found. Initializing default data.")
+
+            -- Insert default data if none exists
+            MySQL.execute(
+                'INSERT INTO bcc_craft_progress (charidentifier, currentXP, currentLevel) VALUES (@charidentifier, 0, 1)',
+                { ['@charidentifier'] = playerId }
+            )
+
+            -- Default response for a new player
+            local craftingData = {
+                level = 1,
+                xpToNextLevel = Config.LevelThresholds[1].xpPerLevel,
+                categories = params.categories or {}
+            }
+            return cb(craftingData)
+        end
+
+        -- Extract current XP and level
+        local currentXP = result[1].currentXP
+        local level = result[1].currentLevel
+        print("[DEBUG] Retrieved XP: " .. tostring(currentXP) .. ", Level: " .. tostring(level))
+
+        -- Calculate XP required for the next level
+        local xpForNextLevel = 0
         for _, threshold in ipairs(Config.LevelThresholds) do
             if level >= threshold.minLevel and level <= threshold.maxLevel then
-                requiredXPForNextLevel = (level - threshold.minLevel + 1) * threshold.xpPerLevel
+                xpForNextLevel = threshold.xpPerLevel
                 break
             end
         end
 
-        local xpToNextLevel = requiredXPForNextLevel - xp
+        if xpForNextLevel == 0 then
+            print("[DEBUG] XP threshold not found for level: " .. tostring(level))
+            return cb(false)
+        end
 
-        -- Send data to the client
-        TriggerClientEvent('bcc-crafting:sendCraftingData', _source, level, xpToNextLevel, categories)
+        -- Calculate the remaining XP to the next level
+        local xpToNextLevel = xpForNextLevel - (currentXP % xpForNextLevel)
+        print("[DEBUG] XP to next level: " .. tostring(xpToNextLevel))
+
+        -- Prepare the response
+        local craftingData = {
+            level = level,
+            xpToNextLevel = math.max(0, xpToNextLevel), -- Ensure no negative values
+            categories = params.categories or {}        -- Include any categories passed in params
+        }
+
+        -- Send the result back
+        return cb(craftingData)
     end)
 end)
 
--- Function to update player's XP and level incrementally
 function AddPlayerCraftingXP(playerId, amount, callback)
     devPrint("Adding XP for player:" .. playerId .. " Amount:" .. amount)
 
     GetPlayerCraftingData(playerId, function(xp, lastLevel)
-        devPrint("Current XP:", xp, " Last Level:" .. lastLevel)
+        devPrint("Current XP: " .. xp .. " Last Level: " .. lastLevel)
 
+        -- Calculate new level and remaining XP
         xp = xp + amount
         local newLevel, remainingXP = CalculateIncrementalLevel(xp, lastLevel)
 
-        devPrint("New XP after addition:" .. xp)
-        devPrint("Calculated New Level:" .. newLevel)
-        devPrint("Remaining XP after leveling:" .. remainingXP)
+        devPrint("New XP after addition: " .. xp)
+        devPrint("Calculated New Level: " .. newLevel)
+        devPrint("Remaining XP after leveling: " .. remainingXP)
 
+        -- Update the database
         local param = {
             ['charidentifier'] = playerId,
-            ['currentXP'] = remainingXP, -- Store remaining XP
+            ['currentXP'] = remainingXP,
             ['currentLevel'] = newLevel,
             ['lastLevel'] = newLevel
         }
 
-        -- Update the database with the new remaining XP and level
         MySQL.execute(
             'UPDATE bcc_craft_progress SET currentXP = @currentXP, currentLevel = @currentLevel, lastLevel = @lastLevel WHERE charidentifier = @charidentifier',
             param, function(rowsAffected)
-                devPrint("Database Update Result:" .. json.encode(rowsAffected) .. " rows affected")
-            end)
+                devPrint("Database Update Result: " .. json.encode(rowsAffected) .. " rows affected")
+            end
+        )
 
-        -- Notify callback only if there is a level increase
+        -- Notify callback if level increased
         if newLevel > lastLevel then
-            devPrint("Level increased! New Level:" .. newLevel)
+            devPrint("Level increased! New Level: " .. newLevel)
             callback(newLevel)
         else
             devPrint("No level increase.")
@@ -502,6 +619,7 @@ function CalculateLevelFromXP(xp)
 
     for _, threshold in ipairs(Config.LevelThresholds) do
         local xpForRange = (threshold.maxLevel - threshold.minLevel + 1) * threshold.xpPerLevel
+
         if remainingXP >= xpForRange then
             -- Move to the next range
             remainingXP = remainingXP - xpForRange
@@ -509,33 +627,36 @@ function CalculateLevelFromXP(xp)
         else
             -- Calculate level within the current range
             level = threshold.minLevel + math.floor(remainingXP / threshold.xpPerLevel)
-            remainingXP = remainingXP % threshold.xpPerLevel -- Update to the remaining XP after level calculation
-            break
+            remainingXP = remainingXP % threshold.xpPerLevel -- Update remaining XP after level calculation
+            break                                            -- Exit once level and remaining XP are determined for current threshold
         end
     end
 
     return level, remainingXP
 end
 
--- Calculate incremental levels based on added XP and lastLevel
 function CalculateIncrementalLevel(xp, lastLevel)
     local level = lastLevel
     local remainingXP = xp
 
     for _, threshold in ipairs(Config.LevelThresholds) do
         if level >= threshold.minLevel and level <= threshold.maxLevel then
-            -- Calculate required XP for current range
+            -- Determine XP required for the current level
             local xpPerLevel = threshold.xpPerLevel
-            
-            -- Adjust level progression to ensure it moves correctly within each threshold
-            while remainingXP >= xpPerLevel and level < threshold.maxLevel do
+
+            while remainingXP >= xpPerLevel do
+                -- Level up
                 remainingXP = remainingXP - xpPerLevel
                 level = level + 1
+
+                -- Stop leveling if we reach the max level of the threshold
+                if level > threshold.maxLevel then
+                    break
+                end
             end
-            
-            -- Check if we have reached the maximum level for this threshold range and move to the next
-            if level == threshold.maxLevel and remainingXP >= xpPerLevel then
-                -- Remaining XP should carry over to the next threshold, so break to exit and loop again
+
+            -- If XP is less than the XP per level, stop further checks
+            if remainingXP < xpPerLevel then
                 break
             end
         end
@@ -544,22 +665,20 @@ function CalculateIncrementalLevel(xp, lastLevel)
     return level, remainingXP
 end
 
--- Register each craftbook as a usable item
 for _, location in ipairs(CraftingLocations) do
-    devPrint("Registering craftbooks for location: " .. json.encode(location.coords))
+    --devPrint("Registering craftbooks for location: " .. json.encode(location.coords))
 
     for _, category in ipairs(location.categories) do
         local craftBookItem = category.craftBookItem
 
-        -- Check if the craftBookItem is not an empty string
+        -- Check if the craftBookItem is valid
         if craftBookItem and craftBookItem ~= "" then
-            --devPrint("Registering craftbook item: " .. craftBookItem .. " for category: " .. category.name)
-
             exports.vorp_inventory:registerUsableItem(craftBookItem, function(data)
                 local src = data.source -- The player's server ID
                 exports.vorp_inventory:closeInventory(src)
 
-                TriggerClientEvent('bcc-crafting:openCategoryMenu', src, category.name, true)
+                -- Use RPC to call the client to open the category menu
+                BccUtils.RPC:Call("bcc-crafting:OpenCategoryMenu", { categoryName = category.name }, nil, src)
             end)
         else
             --devPrint("Skipping registration for empty craftBookItem in category: " .. category.name)
@@ -567,29 +686,28 @@ for _, location in ipairs(CraftingLocations) do
     end
 end
 
--- Server-side callback to retrieve the item limit
-BCCCallbacks.Register("bcc-crafting:getItemLimit", function(source, cb, itemName)
-    devPrint("Received request to fetch item limit for item:" .. tostring(itemName or "No Item Name Provided"))
+BccUtils.RPC:Register("bcc-crafting:getItemLimit", function(params, cb, source)
+    local itemName = params.itemName
+    devPrint("Received request to fetch item limit for item:", tostring(itemName or "No Item Name Provided"))
 
-    if not itemName then
-        devPrint("Error: No itemName provided to getItemLimit callback")
-        cb("N/A")
+    -- Validate the itemName
+    if not itemName or itemName == "" then
+        devPrint("[ERROR] No itemName provided for getItemLimit RPC.")
+        cb("N/A") -- Respond with "N/A" if itemName is invalid
         return
     end
 
-    -- Using direct concatenation in devPrint
-    devPrint("Fetching item limit from database for item: " .. itemName)
-
-    -- Retrieve item data using vorp_inventory export
+    -- Fetch item data from vorp_inventory
+    devPrint("[DEBUG] Fetching item limit from database for item:", itemName)
     local itemDBData = exports.vorp_inventory:getItemDB(itemName)
 
-    if itemDBData then
-        devPrint("Item data found for: " .. itemName .. " with limit: " .. tostring(itemDBData.limit))
-        local itemLimit = itemDBData.limit -- Capture the limit directly if found
-        cb(itemLimit)                      -- Respond with the item limit
+    -- Handle the response
+    if itemDBData and itemDBData.limit then
+        devPrint("[DEBUG] Item data found for:", itemName, "with limit:", tostring(itemDBData.limit))
+        cb(itemDBData.limit) -- Send back the item limit
     else
-        devPrint("No data found for item: " .. itemName)
-        cb() -- Return "N/A" if no data is found
+        devPrint("[ERROR] No data found for item:", itemName)
+        cb("N/A") -- Respond with "N/A" if no data is found
     end
 end)
 

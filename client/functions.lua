@@ -16,11 +16,10 @@ BCCCraftingMenu = FeatherMenu:RegisterMenu("bcc:crafting:mainmenu",
         style = {},
         contentslot = {
             style = {
-                ['height'] = '350px',
+                ['height'] = '450px',
                 ['min-height'] = '250px'
             }
         },
-        draggable = true
     },
     {
         opened = function()
@@ -40,41 +39,6 @@ if Config.devMode then
 else
     function devPrint(message) end -- No-op if DevMode is disabled
 end
-
--- Define the BCCCallbacks table
-BCCCallbacks = {
-    callbacks = {}
-}
-
--- Generate a unique ID for each callback request
-local function generateRequestId()
-    -- Use GetGameTimer() instead of os.time()
-    return math.random(10000, 99999) .. GetGameTimer()
-end
-
--- Table to map requestIds to callbacks
-local callbackMap = {}
-
-BCCCallbacks.Trigger = function(name, cb, ...)
-    local requestId = generateRequestId()
-    callbackMap[requestId] = cb -- Map the requestId to the callback
-
-    local args = { ... }
-    --print("[DEBUG] Triggering callback with name:", name, "Request ID:", requestId, "Data:", json.encode(args))
-
-    -- Send the request to the server with the request ID
-    TriggerServerEvent('BCCCallbacks:Request', name, requestId, ...)
-end
-
--- Generic handler for all responses
-RegisterNetEvent('BCCCallbacks:Response')
-AddEventHandler('BCCCallbacks:Response', function(requestId, response)
-    if callbackMap[requestId] then
-        callbackMap[requestId](response) -- Execute the callback
-        callbackMap[requestId] = nil     -- Clean up the callback after use
-    end
-end)
-
 
 -- Handle player death and close menu
 function HandlePlayerDeathAndCloseMenu()
@@ -103,53 +67,74 @@ function HandlePlayerDeathAndCloseMenu()
     return false -- Return false to indicate the player is alive and the menu can open
 end
 
--- Function to trigger the crafting attempt
 function attemptCraftItem(item, amount)
     item.itemAmount = tonumber(amount) -- Set the amount to craft
-    BCCCallbacks.Trigger('bcc-crafting:attemptCraft', function(success)
+
+    -- Make the RPC call to attempt crafting
+    BccUtils.RPC:Call("bcc-crafting:AttemptCraft", { item = item }, function(success, message)
         if success then
-            devPrint("Crafting started successfully.")
+            devPrint("Crafting started successfully for item: " .. item.itemLabel)
+            VORPcore.NotifyRightTip("Crafting started successfully for " .. item.itemLabel, 4000)
         else
-            devPrint("Failed to start crafting.")
+            devPrint("[ERROR] Failed to start crafting for item: " .. item.itemLabel .. ". Reason: " .. tostring(message))
+            VORPcore.NotifyRightTip(message or "Failed to start crafting.", 4000)
         end
-    end, item)
+    end)
 end
 
--- Function to fetch item limit
+-- Function to fetch item limit using RPC
 function fetchItemLimit(itemName, callback)
-    devPrint("Requesting item limit for:", tostring(itemName)) -- Check `itemName` before sending
+    devPrint("Requesting item limit for:", tostring(itemName)) -- Debug the itemName
 
+    -- Validate the itemName
     if not itemName or itemName == "" then
-        devPrint("Error: itemName is nil or empty in fetchItemLimit")
+        devPrint("[ERROR] itemName is nil or empty in fetchItemLimit")
         callback("N/A") -- Immediately return "N/A" if no valid itemName
         return
     end
 
-    -- Use a wrapped callback to add intermediate debugging
-    local wrappedCallback = function(itemLimit)
-        devPrint("Wrapped callback received item limit for", tostring(itemName), ":", tostring(itemLimit))
-        callback(itemLimit)
-    end
+    -- Make the RPC call to fetch the item limit
+    BccUtils.RPC:Call("bcc-crafting:getItemLimit", { itemName = itemName }, function(itemLimit)
+        if not itemLimit then
+            devPrint("[ERROR] Failed to retrieve item limit for item:", tostring(itemName))
+            callback("N/A")
+            return
+        end
 
-    -- Trigger the server callback
-    BCCCallbacks.Trigger("bcc-crafting:getItemLimit", wrappedCallback, itemName)
+        devPrint("[DEBUG] Item limit received for", tostring(itemName), ":", tostring(itemLimit))
+        callback(itemLimit) -- Pass the item limit to the provided callback
+    end)
 end
 
--- Function to calculate the remaining XP needed for the next level based on the level thresholds
-function GetRemainingXP(currentXP, level)
-    local totalXPForNextLevel = 0
+function GetRemainingXP(currentXP, currentLevel)
+    local xpForNextLevel = 0
+    local totalXPAtCurrentLevel = 0
 
+    -- Find the XP per level for the current level range
     for _, threshold in ipairs(Config.LevelThresholds) do
-        -- Find the correct level range
-        if level >= threshold.minLevel and level <= threshold.maxLevel then
-            -- Calculate the required XP for the next level in the current range
-            totalXPForNextLevel = (level - threshold.minLevel + 1) * threshold.xpPerLevel
+        if currentLevel >= threshold.minLevel and currentLevel <= threshold.maxLevel then
+            xpForNextLevel = threshold.xpPerLevel
+            -- Calculate total XP required to reach the current level's start
+            totalXPAtCurrentLevel = (currentLevel - threshold.minLevel) * threshold.xpPerLevel
             break
         end
     end
 
-    -- Return the difference between required XP for next level and current XP
-    return math.max(0, totalXPForNextLevel - currentXP)
+    if xpForNextLevel == 0 then
+        devPrint("[DEBUG] No matching XP range found for level: " .. tostring(currentLevel))
+        return 0
+    end
+
+    -- Calculate remaining XP for the next level
+    local xpInCurrentLevel = currentXP - totalXPAtCurrentLevel
+    local remainingXP = xpForNextLevel - xpInCurrentLevel
+
+    devPrint("[DEBUG] Current XP: " .. tostring(currentXP))
+    devPrint("[DEBUG] XP per level: " .. tostring(xpForNextLevel))
+    devPrint("[DEBUG] XP within current level: " .. tostring(xpInCurrentLevel))
+    devPrint("[DEBUG] Remaining XP to next level: " .. tostring(remainingXP))
+
+    return math.max(0, remainingXP)
 end
 
 -- Helper function to format time into days, hours, minutes, and seconds

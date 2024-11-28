@@ -36,7 +36,7 @@ Config = {
     -- Adjust this based on your server's maximum allowed weapon count
     WeaponsLimit = 1,      -- Maximum weapons to craft at the time
     maxWeaponsAllowed = 5, -- Maximum weapons to collect when craft finished
-    
+
     -- Image settings for the crafting menu
     UseImageAtBottomMenu = false,
     craftImageURL = "",  -- Add your desired image URL here
