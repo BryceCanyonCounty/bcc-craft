@@ -101,12 +101,19 @@ function openCraftingCategoryMenu(categoryName, currentLocationCategories)
     BCCCraftingMenu:Open({ startupPage = categoryMenu })
 end
 
--- Event to open a specific category menu (single-category mode)
-RegisterNetEvent('bcc-crafting:openCategoryMenu')
-AddEventHandler('bcc-crafting:openCategoryMenu', function(categoryName)
-    devPrint("Triggered event to open specific category: " .. tostring(categoryName))
+BccUtils.RPC:Register("bcc-crafting:OpenCategoryMenu", function(params, cb)
+    local categoryName = params.categoryName
+    if not categoryName then
+        devPrint("[ERROR] Category name is missing!")
+        return cb(false)
+    end
+
+    devPrint("Triggered RPC to open specific category: " .. tostring(categoryName))
     currentLocationCategories = categoryName
     openCraftingCategoryMenu(categoryName)
+
+    -- Return success
+    cb(true)
 end)
 
 -- Function to open crafting item menu with item limit
@@ -125,7 +132,7 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
             </li>
         ]], reqImgPath, reqItem.itemLabel, reqItem.itemLabel, tonumber(reqItem.itemCount) or 0)
     end
-    
+
     local htmlContent = string.format([[
         <div style="padding: 20px; font-family: 'Georgia', serif; color: #4E342E; max-width: 500px; margin: 0 auto;">
             <div style="display: flex; align-items: center; gap: 15px;">
@@ -224,22 +231,6 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
     BCCCraftingMenu:Open({ startupPage = itemMenu })
 end
 
--- Function to open the main crafting menu (shows only location-specific categories)
-AddEventHandler('bcc-crafting:openmenu', function(categories)
-    devPrint("Opening main crafting menu with specific categories for the location")
-    currentLocationCategories = categories -- Store the categories so we can use them later
-    showCraftBookcategory = false          -- We are in location-specific categories mode now
-
-    if HandlePlayerDeathAndCloseMenu() then
-        devPrint("Player is dead, closing the menu")
-        return -- Skip opening the menu if the player is dead
-    end
-
-    -- Request crafting data from the server
-    devPrint("Requesting crafting data from the server")
-    TriggerServerEvent('bcc-crafting:requestCraftingData', categories)
-end)
-
 -- Open crafting amount input menu
 function openCraftingAmountInput(item, categoryName, currentLocationCategories) -- Add categoryName as a parameter
     local inputValue = nil
@@ -304,17 +295,36 @@ function openCraftingAmountInput(item, categoryName, currentLocationCategories) 
     BCCCraftingMenu:Open({ startupPage = craftingAmountMenu })
 end
 
--- Function that gets triggered after receiving crafting data from the server
-RegisterNetEvent('bcc-crafting:sendCraftingData')
-AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP, categories)
-    devPrint("Received crafting data from the server")
-    devPrint("Crafting level: " .. tostring(level) .. ", Current XP: " .. tostring(currentXP))
+AddEventHandler('bcc-crafting:openmenu', function(categories)
+    devPrint("Opening main crafting menu with specific categories for the location")
+    currentLocationCategories = categories
+    showCraftBookcategory = false
 
-    -- Calculate remaining XP to reach the next level
-    local xpToNextLevel = GetRemainingXP(currentXP, level)
-    devPrint("XP to next level: " .. tostring(xpToNextLevel))
+    if HandlePlayerDeathAndCloseMenu() then
+        devPrint("Player is dead, closing the menu")
+        return
+    end
 
-    -- Now create the menu with the received data
+    -- Request crafting data from the server using CallAsync
+    devPrint("Requesting crafting data from the server")
+    local craftingData = BccUtils.RPC:CallAsync("bcc-crafting:GetCraftingData", { categories = categories })
+    if not craftingData then
+        VORPcore.NotifyRightTip("Failed to retrieve crafting data from the server.", 4000)
+        devPrint("Failed to retrieve crafting data from the server.")
+        return
+    end
+
+    -- Extract and use the crafting data
+    local level = craftingData.level
+    local xpToNextLevel = craftingData.xpToNextLevel
+    local categories = craftingData.categories or {}
+
+    devPrint("Crafting level: " .. tostring(level) .. ", XP to next level: " .. tostring(xpToNextLevel))
+
+    -- Debugging logs
+    devPrint("Crafting level: " .. tostring(level) .. ", XP to next level: " .. tostring(xpToNextLevel))
+
+    -- Create the crafting menu
     local craftingMainMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:MainPage")
 
     -- Add crafting header
@@ -361,46 +371,26 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP, cate
         style = {}
     })
 
-    -- Check if we're displaying the menu from a craftbook interaction
-    if showCraftBookcategory then
-        -- Assuming 'categories' contains only one category when opened via craftbook
-        if categories and categories[1] then
-            local categoryData = categories[1]
-            craftingMainMenu:RegisterElement('button', {
-                label = categoryData.label,
-                style = {},
-            }, function()
-                openCraftingCategoryMenu(categoryData.name, currentLocationCategories)
-            end)
-        else
-            craftingMainMenu:RegisterElement('textdisplay', {
-                value = _U('NoAvailableCategories'),
-                style = { fontSize = '18px' }
-            })
+    -- Populate categories in the menu
+    if type(categories) == "table" and #categories > 0 then
+        for _, categoryData in ipairs(categories) do
+            if categoryData.label and categoryData.name then
+                craftingMainMenu:RegisterElement('button', {
+                    label = categoryData.label,
+                    style = {},
+                }, function()
+                    openCraftingCategoryMenu(categoryData.name, categories)
+                end)
+            else
+                devPrint("Invalid category data: Missing 'label' or 'name'")
+            end
         end
     else
-        if type(categories) == "table" and #categories > 0 then
-            for index, categoryData in ipairs(categories) do
-                --devPrint("Category Index: " .. index .. ", Category Data: " .. json.encode(categoryData))
-
-                if categoryData.label and categoryData.name then
-                    craftingMainMenu:RegisterElement('button', {
-                        label = categoryData.label,
-                        style = {},
-                    }, function()
-                        openCraftingCategoryMenu(categoryData.name, currentLocationCategories)
-                    end)
-                else
-                    devPrint("Invalid category data at index: " .. index .. ", Missing 'label' or 'name'")
-                end
-            end
-        else
-            devPrint("No crafting categories available or 'categories' is not a table.")
-            craftingMainMenu:RegisterElement('textdisplay', {
-                value = _U('NoAvailableCategories'),
-                style = { fontSize = '18px' }
-            })
-        end
+        devPrint("No crafting categories available or 'categories' is not a table.")
+        craftingMainMenu:RegisterElement('textdisplay', {
+            value = _U('NoAvailableCategories'),
+            style = { fontSize = '18px' }
+        })
     end
 
     -- Footer line and buttons
@@ -422,7 +412,15 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP, cate
         style = {},
         slot = "footer"
     }, function()
-        TriggerServerEvent('bcc-crafting:getCompletedCrafting')
+        BccUtils.RPC:Call("bcc-crafting:GetCompletedCrafting", {}, function(completedCraftingData)
+            if completedCraftingData then
+                devPrint("[DEBUG] Completed crafting data retrieved successfully.")
+                TriggerEvent("bcc-crafting:sendCompletedCraftingList", completedCraftingData)
+            else
+                devPrint("[DEBUG] No completed crafting data found.")
+                VORPcore.NotifyRightTip(_U("NoCompletedCrafting"), 4000)
+            end
+        end)
     end)
 
     -- Optional footer image
@@ -442,11 +440,10 @@ AddEventHandler('bcc-crafting:sendCraftingData', function(level, currentXP, cate
         })
     end
 
-    -- Finally, open the menu
+    -- Open the menu
     devPrint("Opening crafting main menu")
     BCCCraftingMenu:Open({ startupPage = craftingMainMenu })
 end)
-
 
 function startCrafting(item)
     devPrint("Crafting started for item: " .. item.itemLabel .. ", duration: " .. item.duration)
@@ -505,7 +502,8 @@ function openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories
             ]],
                 craftingLog.itemLabel or "Unknown Item", itemAmount, _U('remainingTime'), formattedTime)
 
-            devPrint("Ongoing crafting: " .. (craftingLog.itemLabel or "Unknown Item") .. " x" .. itemAmount .. ", Remaining Time: " .. formattedTime)
+            devPrint("Ongoing crafting: " ..
+                (craftingLog.itemLabel or "Unknown Item") .. " x" .. itemAmount .. ", Remaining Time: " .. formattedTime)
         end
 
         -- Register the HTML with the menu
@@ -619,20 +617,23 @@ function openCompletedCraftingMenu(completedCraftingList, currentLocationCategor
                 -- Log that we're collecting a crafted item
                 devPrint("Collecting crafted item: " .. (craftingLog.itemLabel))
 
-                -- Close the menu
                 BCCCraftingMenu:Close()
-
-                -- Trigger callback to collect crafted item
-                BCCCallbacks.Trigger('bcc-crafting:collectCraftedItem', function(success)
+                BccUtils.RPC:Call("bcc-crafting:collectCraftedItem", { craftingLog = craftingLog }, function(success)
                     if success then
                         devPrint("Crafting item collected successfully!")
                     else
                         devPrint("Failed to collect the crafted item.")
                     end
-
-                    -- Request completed crafting data again
-                    TriggerServerEvent('bcc-crafting:getCompletedCrafting')
-                end, craftingLog)
+                    BccUtils.RPC:Call("bcc-crafting:GetCompletedCrafting", {}, function(completedCraftingData)
+                        if completedCraftingData then
+                            devPrint("[DEBUG] Completed crafting data retrieved successfully.")
+                            TriggerEvent("bcc-crafting:sendCompletedCraftingList", completedCraftingData)
+                        else
+                            devPrint("[DEBUG] No completed crafting data found.")
+                            VORPcore.NotifyRightTip(_U("NoCompletedCrafting"), 4000)
+                        end
+                    end)
+                end)
             end)
         end
     else
@@ -662,11 +663,19 @@ function openCompletedCraftingMenu(completedCraftingList, currentLocationCategor
     BCCCraftingMenu:Open({ startupPage = completedMenu })
 end
 
--- Client-side event handler for starting crafting
-RegisterNetEvent('bcc-crafting:startCrafting')
-AddEventHandler('bcc-crafting:startCrafting', function(item)
-    devPrint("Received event: startCrafting for item: '" .. item.itemLabel .. "' with name: '" .. item.itemName .. "'")
+-- Client-side RPC to handle starting crafting
+BccUtils.RPC:Register("bcc-crafting:StartCrafting", function(params, cb)
+    local item = params.item
+    if not item or not item.itemLabel or not item.itemName then
+        devPrint("[ERROR] Missing or invalid item data for starting crafting.")
+        return cb(false)
+    end
+
+    devPrint("Received RPC: StartCrafting for item: '" .. item.itemLabel .. "' with name: '" .. item.itemName .. "'")
     startCrafting(item)
+
+    -- Indicate success
+    cb(true)
 end)
 
 RegisterNetEvent('bcc-crafting:sendOngoingCraftingList')

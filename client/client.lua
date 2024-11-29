@@ -19,21 +19,22 @@ CreateThread(function()
                 -- Handle Crafting Blips
                 if location.blip and location.blip.show then
                     local CraftingBlip = BccUtils.Blips:SetBlip(location.blip.label, location.blip.sprite,
-                    location.blip.scale, coord.x, coord.y, coord.z)
+                        location.blip.scale, coord.x, coord.y, coord.z)
                     local blipModifier = BccUtils.Blips:AddBlipModifier(CraftingBlip, location.blip.color)
                     blipModifier:ApplyModifier()
                     CreatedBlip[#CreatedBlip + 1] = CraftingBlip
                 else
                     devPrint("Blips disabled for location: " .. tostring(coord))
                 end
-
                 -- Handle Crafting NPCs
                 if location.npc and location.npc.show then
-                    craftingped = BccUtils.Ped:Create(location.npc.model, coord.x, coord.y, coord.z -1, 0, 'world',false)
+                    craftingped = BccUtils.Ped:Create(location.npc.model, coord.x, coord.y, coord.z - 1, 0, 'world',
+                    false)
                     CreatedNpc[#CreatedNpc + 1] = craftingped
                     craftingped:Freeze()
                     craftingped:SetHeading(heading)
                     craftingped:Invincible()
+                    craftingped:SetBlockingOfNonTemporaryEvents(true)
                 else
                     devPrint("NPCs disabled for location: " .. tostring(coord))
                 end
@@ -77,5 +78,6 @@ AddEventHandler("onResourceStop", function(resource)
         for _, v in pairs(CreatedNpc) do
             v:Remove()
         end
+        BCCCraftingMenu:Close()
     end
 end)
