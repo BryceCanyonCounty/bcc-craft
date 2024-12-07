@@ -481,28 +481,28 @@ function getAvailableSpace(source, itemName)
 end
 
 BccUtils.RPC:Register("bcc-crafting:GetCraftingData", function(params, cb, recSource)
-    print("[DEBUG] Received RPC request for crafting data")
+    devPrint("[DEBUG] Received RPC request for crafting data")
     local user = VORPcore.getUser(recSource)
     if not user then
-        print("[DEBUG] No user found for source: " .. tostring(recSource))
+        devPrint("[DEBUG] No user found for source: " .. tostring(recSource))
         return cb(false)
     end
 
     local char = user.getUsedCharacter
     if not char then
-        print("[DEBUG] No character data found for user.")
+        devPrint("[DEBUG] No character data found for user.")
         return cb(false)
     end
 
     local playerId = char.charIdentifier
-    print("[DEBUG] Character ID: " .. tostring(playerId))
+    devPrint("[DEBUG] Character ID: " .. tostring(playerId))
 
     -- Query the database directly
     MySQL.query('SELECT currentXP, currentLevel FROM bcc_craft_progress WHERE charidentifier = @charidentifier', {
         ['@charidentifier'] = playerId
     }, function(result)
         if not result or #result == 0 then
-            print("[DEBUG] No crafting data found. Initializing default data.")
+            devPrint("[DEBUG] No crafting data found. Initializing default data.")
 
             -- Insert default data if none exists
             MySQL.execute(
@@ -522,7 +522,7 @@ BccUtils.RPC:Register("bcc-crafting:GetCraftingData", function(params, cb, recSo
         -- Extract current XP and level
         local currentXP = result[1].currentXP
         local level = result[1].currentLevel
-        print("[DEBUG] Retrieved XP: " .. tostring(currentXP) .. ", Level: " .. tostring(level))
+        devPrint("[DEBUG] Retrieved XP: " .. tostring(currentXP) .. ", Level: " .. tostring(level))
 
         -- Calculate XP required for the next level
         local xpForNextLevel = 0
@@ -534,13 +534,13 @@ BccUtils.RPC:Register("bcc-crafting:GetCraftingData", function(params, cb, recSo
         end
 
         if xpForNextLevel == 0 then
-            print("[DEBUG] XP threshold not found for level: " .. tostring(level))
+            devPrint("[DEBUG] XP threshold not found for level: " .. tostring(level))
             return cb(false)
         end
 
         -- Calculate the remaining XP to the next level
         local xpToNextLevel = xpForNextLevel - (currentXP % xpForNextLevel)
-        print("[DEBUG] XP to next level: " .. tostring(xpToNextLevel))
+        devPrint("[DEBUG] XP to next level: " .. tostring(xpToNextLevel))
 
         -- Prepare the response
         local craftingData = {
