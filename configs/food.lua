@@ -2,61 +2,167 @@ CraftingLocations = CraftingLocations or {}
 
 local food = {
     {
+        locationId = "food",
         coords = {
-            vector3(231.87, 530.09, 116.27)
+            vector3(-2396.4, -2387.94, 61.46),
+            vector3(2543.07, 800.81, 76.37),
+            vector3(-359.41, 735.95, 116.87)
         },
         NpcHeading = {
-            168.10
+            133.65,
+            13.63,
+            120.53
         },
         blip = {
-            show = true,                         -- Toggle the blip on/off
-            sprite = -1954662204,                -- Blip sprite (icon)
-            color = 2,                           -- Blip color
-            scale = 0.8,                         -- Blip scale
-            label = "Food Crafting Station",     -- Blip label
+            show = true,
+            sprite = -1852063472,
+            color = "BLIP_MODIFIER_MP_COLOR_14",
+            scale = 0.8,
+            label = "Cook Food",
         },
         npc = {
-            model = "A_M_M_Rancher_01",     -- NPC model
-            name = "Crafting Vendor",
-            show = true                     -- Toggle the NPC on/off
+            model = "S_M_M_StrLumberjack_01",
+            name = "Food Vendor",
+            show = true,
+            scenario = "WORLD_HUMAN_WRITE_NOTEBOOK",
+            anim = {
+                dict = '',
+                name = ''
+            }
         },
-        categories = {                      -- Categories available at this location
+        categories = {
             {
-                name = "food",
-                label = "Food",
-                craftBookItem = "food_craftbook",     -- Unique craftbook item for the Food category
+                name = "meat",
+                label = "Meat Dishes",
+                craftBookItem = "food_craftbook",
+                campfireModel = "p_campfire03x",
+                setupAnimDict = "mini_games@story@beechers@build_floor@john",
+                setupAnimName = "hammer_loop_good",
+                setupScenario = "WORLD_HUMAN_WRITE_NOTEBOOK",
+                setupTime = 5000,
                 items = {
                     {
-                        itemName = "consumable_meal",
-                        itemLabel = "Consumable Meal",
-                        requiredJobs = {     -- Define the required jobs for this item
-                            --{ name = "butcher", grade = 1 },
-                            --{ name = "chef", grade = 2 }
-                        },
-                        rewardXP = 5,
-                        requiredLevel = 0,
+                        itemName = "consumable_breakfast",
+                        itemLabel = "Breakfast",
+                        rewardXP = 1,
+                        requiredLevel = 1,
                         itemAmount = 1,
-                        duration = 1200,
+                        duration = 10,
                         requiredItems = {
-                            { itemName = "sugarcube",  itemLabel = "Sugar Cube",   itemCount = 2, removeItem = true },
-                            { itemName = "bagofflour", itemLabel = "Bag of Flour", itemCount = 1, removeItem = true },
-                            { itemName = "salt",       itemLabel = "Salt",         itemCount = 2, removeItem = false },
-                            { itemName = "milk",       itemLabel = "Milk",         itemCount = 1, removeItem = true }
-                        }
+                            { itemName = "meat", itemLabel = "Meat", itemCount = 1, removeItem = true },
+                            { itemName = "egg", itemLabel = "Egg", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false
                     },
-                }
-            },
-            {
-                name = "weapons",
-                label = "Weapons",
-                craftBookItem = "weapons_craftbook",     -- Unique craftbook item for the Weapons category
-                items = {
-                    -- Weapon crafting items would be defined here
+                    {
+                        itemName = "steak",
+                        itemLabel = "Grilled Meat",
+                        rewardXP = 1,
+                        requiredLevel = 1,
+                        itemAmount = 1,
+                        duration = 10,
+                        requiredItems = {
+                            { itemName = "meat", itemLabel = "Meat", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false
+                    },
+                    {
+                        itemName = "cooked_biggame",
+                        itemLabel = "Salted Big Game Dish",
+                        rewardXP = 1,
+                        requiredLevel = 1,
+                        itemAmount = 1,
+                        duration = 10,
+                        requiredItems = {
+                            { itemName = "biggame", itemLabel = "Big Game Meat", itemCount = 1, removeItem = true },
+                            { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false,
+                    },
+                    {
+                        itemName = "cooked_game",
+                        itemLabel = "Salted Game Dish",
+                        rewardXP = 1,
+                        requiredLevel = 1,
+                        itemAmount = 1,
+                        duration = 10,
+                        requiredItems = {
+                            { itemName = "game", itemLabel = "Game Meat", itemCount = 1, removeItem = true },
+                            { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false
+                    },
+                    {
+                        itemName = "cooked_venison",
+                        itemLabel = "Venison Dish",
+                        rewardXP = 1,
+                        requiredLevel = 1,
+                        itemAmount = 1,
+                        duration = 10,
+                        requiredItems = {
+                            { itemName = "venison", itemLabel = "Venison", itemCount = 1, removeItem = true },
+                            { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false
+                    },
+                    {
+                        itemName = "cooked_mutton",
+                        itemLabel = "Mutton Dish",
+                        rewardXP = 1,
+                        requiredLevel = 1,
+                        itemAmount = 1,
+                        duration = 10,
+                        requiredItems = {
+                            { itemName = "Mutton", itemLabel = "Mutton", itemCount = 1, removeItem = true },
+                            { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false
+                    },
+                    {
+                        itemName = "cooked_pork",
+                        itemLabel = "Pork Dish",
+                        rewardXP = 1,
+                        requiredLevel = 1,
+                        itemAmount = 1,
+                        duration = 10,
+                        requiredItems = {
+                            { itemName = "pork", itemLabel = "Pork", itemCount = 1, removeItem = true },
+                            { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false
+                    },
+                    {
+                        itemName = "cooked_bird",
+                        itemLabel = "Bird Meat Dish",
+                        rewardXP = 1,
+                        requiredLevel = 1,
+                        itemAmount = 1,
+                        duration = 10,
+                        requiredItems = {
+                            { itemName = "bird", itemLabel = "Bird Meat", itemCount = 1, removeItem = true },
+                            { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false
+                    },
+                    {
+                        itemName = "consumable_bluegil",
+                        itemLabel = "Fish Dish",
+                        rewardXP = 1,
+                        requiredLevel = 1,
+                        itemAmount = 1,
+                        duration = 10,
+                        requiredItems = {
+                            { itemName = "fish", itemLabel = "Fish", itemCount = 1, removeItem = true },
+                            { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
+                        },
+                        playAnimation = false
+                    }
                 }
             }
         }
     },
 }
+
 -- Use table unpacking to add multiple locations
 for _, location in ipairs(food) do
     table.insert(CraftingLocations, location)

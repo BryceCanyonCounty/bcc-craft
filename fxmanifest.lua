@@ -31,7 +31,8 @@ dependency {
     'vorp_inventory',
     'vorp_character',
     'bcc-utils',
-    'feather-menu'
+    'feather-menu',
+    'feather-progressbar'
 }
 
-version '1.0.1'
+version '1.1.0'

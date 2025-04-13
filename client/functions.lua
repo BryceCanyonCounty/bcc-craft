@@ -3,7 +3,7 @@ VORPcore = exports.vorp_core:GetCore()
 
 FeatherMenu = exports["feather-menu"].initiate()
 BccUtils = exports["bcc-utils"].initiate()
-MiniGame = exports["bcc-minigames"].initiate()
+progressbar = exports["feather-progressbar"]:initiate()
 
 BCCCraftingMenu = FeatherMenu:RegisterMenu("bcc:crafting:mainmenu",
     {
@@ -13,11 +13,26 @@ BCCCraftingMenu = FeatherMenu:RegisterMenu("bcc:crafting:mainmenu",
         ['1080width'] = '500px',
         ['2kwidth'] = '600px',
         ['4kwidth'] = '800px',
-        style = {},
+        style = {
+            --['background-image'] = 'url("nui://bcc-craft/assets/background.png")',
+            --['background-size'] = 'cover',  
+            --['background-repeat'] = 'no-repeat',
+                --['background-position'] = 'center',
+                --['background-color'] = 'rgba(55, 33, 14, 0.7)', -- A leather-like brown
+                --['border'] = '1px solid #654321', 
+                --['font-family'] = 'Times New Roman, serif', 
+                --['font-size'] = '38px',
+                --['color'] = '#ffffff', 
+                --['padding'] = '10px 20px',
+                --['margin-top'] = '5px',
+                --['cursor'] = 'pointer', 
+                --['box-shadow'] = '3px 3px #333333', 
+                --['text-transform'] = 'uppercase', 
+        },
         contentslot = {
             style = {
                 ['height'] = '450px',
-                ['min-height'] = '250px'
+                ['min-height'] = '300px'
             }
         },
     },
@@ -27,6 +42,7 @@ BCCCraftingMenu = FeatherMenu:RegisterMenu("bcc:crafting:mainmenu",
         end,
         closed = function()
             DisplayRadar(true)
+            cleanupCampfireIfExists()
         end
     }
 )
@@ -68,16 +84,69 @@ function HandlePlayerDeathAndCloseMenu()
 end
 
 function attemptCraftItem(item, amount)
-    item.itemAmount = tonumber(amount) -- Set the amount to craft
+    item.itemAmount = tonumber(amount)
+    local ped = PlayerPedId()
+    local durationMs = (tonumber(item.duration)) * item.itemAmount * 1000
+    devPrint("[CRAFTING] Total crafting duration in milliseconds: " .. tostring(durationMs))
+    print("[CLIENT] Sending item to CanCraft: " .. json.encode(item))
+    BccUtils.RPC:Call("bcc-crafting:CanCraft", { item = item, locationId = currentCraftingLocationId }, function(canCraft, message)
+        if not canCraft then
+            VORPcore.NotifyRightTip("Cannot start crafting.", 4000)
+            return
+        end
 
-    -- Make the RPC call to attempt crafting
-    BccUtils.RPC:Call("bcc-crafting:AttemptCraft", { item = item }, function(success, message)
-        if success then
-            devPrint("Crafting started successfully for item: " .. item.itemLabel)
-            VORPcore.NotifyRightTip("Crafting started successfully for " .. item.itemLabel, 4000)
+        -- Passed validation
+        BCCCraftingMenu:Close()
+        isCrafting = true
+
+        if item.playAnimation then
+            PlayAnim("mech_inventory@crafting@fallbacks@in_hand@male_a", "craft_trans_hold", durationMs)
+
+            progressbar.onCancel(function()
+                isCrafting = false
+                ClearPedTasks(ped)
+                SetNuiFocus(false, false)
+                VORPcore.NotifyRightTip(_U("CraftingCanceled"), 3000)
+                TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
+            end)
+
+            progressbar.start(
+                _U("craftingItem") .. item.itemLabel .. " x" .. item.itemAmount ..". ESC pentru a anula",
+                durationMs,
+                function()
+                    if not isCrafting then return end
+                    isCrafting = false
+                    ClearPedTasks(ped)
+
+                    -- Now do the real crafting
+                    BccUtils.RPC:Call("bcc-crafting:AttemptCraft", { item = item, locationId = currentCraftingLocationId }, function(success, err)
+                        if success then
+                            VORPcore.NotifyRightTip(_U("CraftingComplete"), 4000)
+                        else
+                            VORPcore.NotifyRightTip(_U("CraftingFailed"), 4000)
+                        end
+                        TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
+                    end)
+                end,
+                'innercircle',
+                '#bb8844',
+                '22vw',
+                true
+            )
+
+            SetNuiFocus(true, true)
+            Wait(50)
+            SetNuiFocus(false, false)
         else
-            devPrint("[ERROR] Failed to start crafting for item: " .. item.itemLabel .. ". Reason: " .. tostring(message))
-            VORPcore.NotifyRightTip(message or "Failed to start crafting.", 4000)
+            -- No animation, do crafting immediately
+            BccUtils.RPC:Call("bcc-crafting:AttemptCraft", { item = item, locationId = currentCraftingLocationId }, function(success, err)
+                if success then
+                    VORPcore.NotifyRightTip("Crafting started successfully for " .. item.itemLabel, 4000)
+                else
+                    VORPcore.NotifyRightTip("Failed to start crafting.", 4000)
+                end
+                TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
+            end)
         end
     end)
 end
@@ -163,3 +232,22 @@ AddEventHandler('bcc-crafting:levelUp', function(newLevel)
     devPrint("Player leveled up! New crafting level: " .. newLevel)
     VORPcore.NotifyRightTip("Congratulations! You have reached crafting level " .. newLevel)
 end)
+
+function PlayAnim(dict, anim, duration)
+    RequestAnimDict(dict)
+    while not HasAnimDictLoaded(dict) do Wait(10) end
+    TaskPlayAnim(PlayerPedId(), dict, anim, 8.0, -8.0, duration or -1, 1, 0, false, false, false)
+end
+
+function cleanupCampfireIfExists()
+    if myCampfire and DoesEntityExist(myCampfire) then
+        NetworkRequestControlOfEntity(myCampfire)
+        while not NetworkHasControlOfEntity(myCampfire) do
+            Wait(10)
+        end
+        DeleteObject(myCampfire)
+        myCampfire = nil
+        devPrint("Campfire cleaned up")
+        ClearPedTasksImmediately(PlayerPedId())
+    end
+end
