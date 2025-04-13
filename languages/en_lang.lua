@@ -66,5 +66,12 @@ Locales["en_lang"] = {
     CannotCraftOverLimit = 'You cannot craft more than the item limit, try a smaller amount.',
     CraftingLimit = 'Crafting limit.',
     CollectedWeapon = 'You have collected a crafted weapon: ',
-    CannotCarryMoreWeapons = 'Cannot carry more weapons'
+    CannotCarryMoreWeapons = 'Cannot carry more weapons',
+    WrongCollectionLocation = "You cannot collect from this location. Go to the place where you start crafting.",
+    craftingItem = "Crafting item ",
+    RequiredJobs = "Required Jobs",
+    NoJobNeeded = "N/A",
+    CraftingComplete = "Crafting Completed",
+    CraftingFailed = "Crafting Failed",
+    PreparingCampFire = "Setting up campfire..."
 }

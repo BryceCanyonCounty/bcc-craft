@@ -50,6 +50,11 @@ CreateThread(function()
         `label`=VALUES(`label`), `limit`=VALUES(`limit`), `can_remove`=VALUES(`can_remove`), `type`=VALUES(`type`), `usable`=VALUES(`usable`), `desc`=VALUES(`desc`);
     ]])
 
+    --  Added locationId to be able to collect the crafted items from where start the crafting
+    MySQL.query.await([[
+        ALTER TABLE `bcc_crafting_log` ADD COLUMN IF NOT EXISTS `locationId` VARCHAR(50) DEFAULT NULL;
+    ]])
+    
     -- Print a success message to the console
     print("Database tables for \x1b[35m\x1b[1m*bcc-crafting*\x1b[0m created or updated \x1b[32msuccessfully\x1b[0m.")
 end)
