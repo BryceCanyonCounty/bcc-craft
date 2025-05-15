@@ -25,6 +25,7 @@ CraftingLocations = CraftingLocations or {}
 local ammunitions = {
     {
         locationId = "ammunitions",
+        craftbookCategory = "ammo_craftbook",
         coords = {
             vector3(410.35, -1283.62, 41.66)
         },
@@ -67,7 +68,8 @@ local ammunitions = {
                             { itemName = "lockpickmold", itemLabel = "Lockpick Mold", itemCount = 1, removeItem = false },
                             { itemName = "ironbar", itemLabel = "Iron Ingot", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammoshotgunnormal",
@@ -83,7 +85,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammoshotgunslug",
@@ -99,7 +102,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 2, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammorevolvernormal",
@@ -115,7 +119,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammorevolverexpress",
@@ -131,7 +136,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 2, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammorevolvervelocity",
@@ -147,7 +153,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 3, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammopistolnormal",
@@ -163,7 +170,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammopistolexpress",
@@ -179,7 +187,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 2, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammorepeaternormal",
@@ -195,7 +204,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammorepeatervelocity",
@@ -211,7 +221,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 3, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammorepeaterexpress",
@@ -227,7 +238,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 2, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammoriflenormal",
@@ -243,7 +255,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammorifleexpress",
@@ -259,7 +272,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 2, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammoriflevelocity",
@@ -275,7 +289,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 3, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammoelephant",
@@ -291,7 +306,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "ammovarmint",
@@ -307,7 +323,8 @@ local ammunitions = {
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
                             { itemName = "powdergun", itemLabel = "Gunpowder", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     }
                 }
             }

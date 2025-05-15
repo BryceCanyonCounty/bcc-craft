@@ -3,6 +3,7 @@ CraftingLocations = CraftingLocations or {}
 local food = {
     {
         locationId = "food",
+		craftbookCategory = "food_craftbook",
         coords = {
             vector3(-2396.4, -2387.94, 61.46),
             vector3(2543.07, 800.81, 76.37),
@@ -52,7 +53,8 @@ local food = {
                             { itemName = "meat", itemLabel = "Meat", itemCount = 1, removeItem = true },
                             { itemName = "egg", itemLabel = "Egg", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "steak",
@@ -64,7 +66,8 @@ local food = {
                         requiredItems = {
                             { itemName = "meat", itemLabel = "Meat", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cooked_biggame",
@@ -78,6 +81,7 @@ local food = {
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
                         },
                         playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cooked_game",
@@ -90,7 +94,8 @@ local food = {
                             { itemName = "game", itemLabel = "Game Meat", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cooked_venison",
@@ -103,7 +108,8 @@ local food = {
                             { itemName = "venison", itemLabel = "Venison", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cooked_mutton",
@@ -116,7 +122,8 @@ local food = {
                             { itemName = "Mutton", itemLabel = "Mutton", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cooked_pork",
@@ -129,7 +136,8 @@ local food = {
                             { itemName = "pork", itemLabel = "Pork", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cooked_bird",
@@ -142,7 +150,8 @@ local food = {
                             { itemName = "bird", itemLabel = "Bird Meat", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "consumable_bluegil",
@@ -155,7 +164,8 @@ local food = {
                             { itemName = "fish", itemLabel = "Fish", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     }
                 }
             }

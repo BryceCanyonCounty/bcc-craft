@@ -42,5 +42,11 @@ Config = {
     craftImageURL = "",            -- Add your desired image URL here
 
     allowGlobalCollection = false, -- true = can collect crafted items from anywhere
+	
+    HasCraftBooks = false,    --This will show a button to every location so they can buy craftbook from there
+
+    -- If you want to use BCC-UserLog API's
+    -- Global toggle for using playtime restrictions
+    useBccUserlog = false
 
 }

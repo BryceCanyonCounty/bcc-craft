@@ -2,7 +2,8 @@ CraftingLocations = CraftingLocations or {}
 
 local weapons = {
     {
-        locationId = "weapons",
+        locationId = "weapons"
+		craftbookCategory = "weapons_craftbook",
         coords = {
             vector3(414.96, -1275.21, 41.76)
         },
@@ -46,7 +47,8 @@ local weapons = {
                             { itemName = "nails", itemLabel = "Nails", itemCount = 1, removeItem = true },
                             { itemName = "ironhammer", itemLabel = "Iron Hammer", itemCount = 1, removeItem = false },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "WEAPON_MELEE_LANTERN",
@@ -63,7 +65,8 @@ local weapons = {
                             { itemName = "trainoil", itemLabel = "Oil", itemCount = 1, removeItem = true },
                             { itemName = "pliers", itemLabel = "Pliers", itemCount = 1, removeItem = false }
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "WEAPON_MELEE_DAVY_LANTERN",
@@ -80,7 +83,8 @@ local weapons = {
                             { itemName = "trainoil", itemLabel = "Oil", itemCount = 1, removeItem = true },
                             { itemName = "pliers", itemLabel = "Pliers", itemCount = 1, removeItem = false }
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     }
                 }
             },
@@ -109,7 +113,8 @@ local weapons = {
                             { itemName = "screwdriver", itemLabel = "Screwdriver", itemCount = 1, removeItem = false },
                             { itemName = "pliers", itemLabel = "Pliers", itemCount = 1, removeItem = false },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "WEAPON_REVOLVER_LEMAT",
@@ -126,7 +131,8 @@ local weapons = {
                             { itemName = "screwdriver", itemLabel = "Screwdriver", itemCount = 1, removeItem = false },
                             { itemName = "pliers", itemLabel = "Pliers", itemCount = 1, removeItem = false },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "WEAPON_REVOLVER_SCHOFIELD",
@@ -143,7 +149,8 @@ local weapons = {
                             { itemName = "screwdriver", itemLabel = "Screwdriver", itemCount = 1, removeItem = false },
                             { itemName = "pliers", itemLabel = "Pliers", itemCount = 1, removeItem = false },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "WEAPON_REVOLVER_CATTLEMAN",
@@ -160,7 +167,8 @@ local weapons = {
                             { itemName = "screwdriver", itemLabel = "Screwdriver", itemCount = 1, removeItem = false },
                             { itemName = "pliers", itemLabel = "Pliers", itemCount = 1, removeItem = false },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     }
                 }
             }

@@ -33,7 +33,8 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
 		local count = tonumber(reqItem.itemCount)
 
 		requiredItemsHTML = requiredItemsHTML
-			.. '<div style="display: flex; flex-direction: column; align-items: center; width: 90px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">'
+			..
+			'<div style="display: flex; flex-direction: column; align-items: center; width: 90px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">'
 			.. '<img src="'
 			.. reqImgPath
 			.. '" style="width: 48px; height: 48px; margin-bottom: 6px;" alt="'
@@ -63,7 +64,10 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
 		<!-- Header: Image + Item Info Table -->
 		<div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px;">
 			<div style="flex-shrink: 0;">
-				<img src="]] .. imgPath .. [[" alt="]] .. item.itemLabel .. [[" style="width: 100px; height: 100px; border: 1px solid #bbb; border-radius: 6px;">
+				<img src="]] ..
+		imgPath ..
+		[[" alt="]] ..
+		item.itemLabel .. [[" style="width: 100px; height: 100px; border: 1px solid #bbb; border-radius: 6px;">
 			</div>
 
 			<table style="flex-grow: 1; width: 100%; border-collapse: collapse; font-size: 16px;">
@@ -73,7 +77,8 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
                 </tr>
                 <tr style="border-bottom: 1px solid #ddd;">
                     <td style="padding: 6px 10px;">]] .. _U("CraftTimeRemains") .. [[</td>
-                    <td style="padding: 6px 10px; color: #e76f51;">]] .. (tonumber(item.duration)) .. " " .. _U("seconds") .. [[</td>
+                    <td style="padding: 6px 10px; color: #e76f51;">]] ..
+		(tonumber(item.duration)) .. " " .. _U("seconds") .. [[</td>
                 </tr>
                 <tr style="border-bottom: 1px solid #ddd;">
                     <td style="padding: 6px 10px;">]] .. _U("RewardXp") .. [[</td>
@@ -151,7 +156,7 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
 			-- For regular items, open the crafting amount input menu
 			devPrint("Opening amount input for regular item:", item.itemName)
 			openCraftingAmountInput(item, categoryName, currentLocationCategories, itemLimit)
-        end
+		end
 	end)
 
 	itemMenu:RegisterElement("button", {
@@ -173,67 +178,109 @@ end
 
 -- Open crafting amount input menu
 
-function openCraftingAmountInput(item, categoryName, currentLocationCategories, itemLimit)
-    local inputValue = nil
-	local craftingAmountMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:amountInput")
-
-	-- Header
-	craftingAmountMenu:RegisterElement("header", {
-		value = item.itemLabel,
-		slot = "header",
-		style = {},
-	})
-
-	craftingAmountMenu:RegisterElement("line", {
-		style = {},
-		slot = "content",
-	})
-
-	-- Input field
-	craftingAmountMenu:RegisterElement("input", {
-		label = _U("EnterAmount"),
-		placeholder = _U("AmountPlaceholder"),
-		slot = "content",
-		style = {},
-	}, function(data)
-		inputValue = tonumber(data.value) or 0 -- Update the input value
-	end)
-
-	craftingAmountMenu:RegisterElement("line", {
-		style = {},
-		slot = "footer",
-	})
-
-	-- Confirm button
-	craftingAmountMenu:RegisterElement("button", {
-		label = _U("ConfirmCraft") .. item.itemLabel,
-		slot = "footer",
-		style = {},
-	}, function()
-		-- Ensure inputValue is a valid number and greater than 0
-		if inputValue and tonumber(inputValue) > 0 then
-			attemptCraftItem(item, tonumber(inputValue))
-		else
-			devPrint("Invalid amount entered.")
-			VORPcore.NotifyObjective(_U("InvalidAmount"), 4000)
+function openCraftingAmountInput(item, categoryName, currentLocationCategories)
+	local inputValue = nil
+	-- First request max craftable amount
+	BccUtils.RPC:Call("bcc-crafting:GetMaxCraftAmount", { item = item }, function(maxCraftable)
+		if not maxCraftable then
+			devPrint("[ERROR] Failed to get max craftable amount.")
+			FeatherMenu:Notify({
+				message = "Cannot determine how many items you can craft.",
+				4000,
+				type = "error",
+				autoClose = 4000,
+				position = "bottom-center",
+				icon = false,
+				hideProgressBar = false,
+				rtl = false,
+				transition = "slide",
+				style = {},
+				toastStyle = {},
+				progressStyle = {}
+			})
+			return
 		end
+
+		-- Now continue to build the crafting amount menu
+		local craftingAmountMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:amountInput")
+
+		craftingAmountMenu:RegisterElement("header", {
+			value = item.itemLabel,
+			slot = "header",
+			style = {},
+		})
+
+		craftingAmountMenu:RegisterElement("line", {
+			style = {},
+			slot = "content",
+		})
+
+		local htmlContent = '<div style="text-align: center; margin: 10px 0;">' ..
+			'<span style="font-size: 18px; font-weight: bold; color: #4CAF50;">' ..
+			_U('maxCraftAmount') .. maxCraftable ..
+			'</span></div>'
+
+		craftingAmountMenu:RegisterElement("html", {
+			value = { htmlContent },
+			slot = "content",
+			style = {},
+		})
+
+		craftingAmountMenu:RegisterElement("input", {
+			label = _U("EnterAmount"),
+			placeholder = _U("AmountPlaceholder"),
+			slot = "content",
+			style = {},
+		}, function(data)
+			inputValue = tonumber(data.value) or 0
+		end)
+
+		craftingAmountMenu:RegisterElement("line", {
+			style = {},
+			slot = "footer",
+		})
+
+		craftingAmountMenu:RegisterElement("button", {
+			label = _U("ConfirmCraft") .. item.itemLabel,
+			slot = "footer",
+			style = {},
+		}, function()
+			if inputValue and tonumber(inputValue) > 0 then
+				attemptCraftItem(item, tonumber(inputValue))
+			else
+				devPrint("Invalid amount entered.")
+				--[[FeatherMenu:Notify({
+					message = _U("InvalidAmount"),
+					type = "error",
+					autoClose = 4000,
+					position = "bottom-center",
+					icon = false,
+					hideProgressBar = false,
+					rtl = false,
+					transition = "slide",
+					style = {},
+					toastStyle = {},
+					progressStyle = {}
+				})]]
+			end
+		end)
+
+		craftingAmountMenu:RegisterElement("button", {
+			label = _U("BackButton"),
+			slot = "footer",
+			style = {},
+		}, function()
+			openCraftingItemMenu(item, categoryName)
+		end)
+
+		craftingAmountMenu:RegisterElement("bottomline", {
+			style = {},
+			slot = "footer",
+		})
+
+		-- Finally open the menu
+		BCCCraftingMenu:Open({ startupPage = craftingAmountMenu })
 	end)
-
-	-- Back button
-	craftingAmountMenu:RegisterElement("button", {
-		label = _U("BackButton"),
-		slot = "footer",
-		style = {},
-	}, function()
-		openCraftingItemMenu(item, categoryName, itemLimit)
-	end)
-
-	craftingAmountMenu:RegisterElement("bottomline", {
-		style = {},
-		slot = "footer",
-	})
-
-	BCCCraftingMenu:Open({ startupPage = craftingAmountMenu })
 end
 
 RegisterNetEvent("bcc-crafting:openmenu") -- ✅ Make it network-safe
@@ -250,7 +297,19 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 	devPrint("Requesting crafting data from the server")
 	local craftingData = BccUtils.RPC:CallAsync("bcc-crafting:GetCraftingData", { categories = categories })
 	if not craftingData then
-		VORPcore.NotifyRightTip("Failed to retrieve crafting data from the server.", 4000)
+		FeatherMenu:Notify({
+			message = "Failed to retrieve crafting data from the server.",
+			type = "error",
+			autoClose = 4000,
+			position = "bottom-center",
+			icon = false,
+			hideProgressBar = false,
+			rtl = false,
+			transition = "slide",
+			style = {},
+			toastStyle = {},
+			progressStyle = {}
+		})
 		devPrint("Failed to retrieve crafting data from the server.")
 		return
 	end
@@ -377,10 +436,32 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 			if completedCraftingData then
 				TriggerEvent("bcc-crafting:sendCompletedCraftingList", completedCraftingData)
 			else
-				VORPcore.NotifyRightTip(_U("NoCompletedCrafting"), 4000)
+				FeatherMenu:Notify({
+					message = _U("NoCompletedCrafting"),
+					type = "error",
+					autoClose = 4000,
+					position = "bottom-center",
+					icon = false,
+					hideProgressBar = false,
+					rtl = false,
+					transition = "slide",
+					style = {},
+					toastStyle = {},
+					progressStyle = {}
+				})
 			end
 		end)
 	end)
+
+	if Config.HasCraftBooks then
+		craftingMainMenu:RegisterElement("button", {
+			label = "📖 I-ati cartea de craftat",
+			style = {},
+			slot = "footer",
+		}, function()
+			openCraftbookSelectionMenu()
+		end)
+	end
 
 	craftingMainMenu:RegisterElement("bottomline", {
 		style = {},
@@ -420,12 +501,160 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 	BCCCraftingMenu:Open({ startupPage = craftingMainMenu })
 end)
 
+local currentCraftbookPage = 1
+local booksPerPage = 10
+
+function openCraftbookSelectionMenu(page)
+    local totalPages = math.ceil(#CraftingLocations / booksPerPage)
+    currentCraftbookPage = page or 1
+
+    local CraftBookMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:craftbook:select:" .. currentCraftbookPage)
+
+    CraftBookMenu:RegisterElement("header", {
+        value = "📚 Alege o categorie",
+        slot = "header",
+        style = {}
+    })
+
+    local startIndex = (currentCraftbookPage - 1) * booksPerPage + 1
+    local endIndex = math.min(startIndex + booksPerPage - 1, #CraftingLocations)
+
+    for i = startIndex, endIndex do
+        local location = CraftingLocations[i]
+        local locationLabel = location.blip and location.blip.label or location.locationId or "Locatie necunoscuta"
+
+        CraftBookMenu:RegisterElement("button", {
+            label = " 📚  " .. locationLabel,
+            style = {}
+        }, function()
+            openCraftbookLocationPage(location)
+        end)
+    end
+
+    CraftBookMenu:RegisterElement("line", { 
+		slot = "footer",
+		style = {} 
+	})
+
+	CraftBookMenu:RegisterElement("pagearrows", {
+		slot = "footer",
+		total = totalPages,
+		current = currentCraftbookPage,
+		style = {}
+	}, function(data)
+		print("[DEBUG] Arrow pressed:", data.value)
+
+		if data.value == "forward" and currentCraftbookPage < totalPages then
+			openCraftbookSelectionMenu(currentCraftbookPage + 1)
+		elseif data.value == "back" and currentCraftbookPage > 1 then
+			openCraftbookSelectionMenu(currentCraftbookPage - 1)
+		end
+	end)
+
+    -- Divider
+    CraftBookMenu:RegisterElement("line", { 
+		slot = "footer",
+		style = {} 
+	})
+
+    CraftBookMenu:RegisterElement("button", {
+        label = "⬅️ Inapoi",
+        slot = "footer",
+        style = {}
+    }, function()
+        TriggerEvent("bcc-crafting:openmenu", currentLocationCategories)
+    end)
+
+    CraftBookMenu:RegisterElement("bottomline", {
+        slot = "footer",
+        style = {}
+    })
+
+    BCCCraftingMenu:Open({ startupPage = CraftBookMenu })
+end
+
+function openCraftbookLocationPage(location)
+    local locationLabel = location.blip and location.blip.label or location.locationId or "Locatie necunoscuta"
+    local LocationPage = BCCCraftingMenu:RegisterPage("bcc-crafting:location:" .. location.locationId)
+
+    -- Header
+    LocationPage:RegisterElement("header", {
+        value = "Carti - " .. locationLabel,
+        slot = "header",
+        style = { fontSize = "19px", fontWeight = "bold", marginBottom = "10px" }
+    })
+
+    -- 🔔 Requirements display
+	LocationPage:RegisterElement("html", {
+		value = { [[
+			<div style="background: #1a1a1a;">
+				<div style="font-size: 16px; font-weight: bold; color: #ffcc00;">🔒 Cerinte pentru a obtine o carte:</div>
+				<ul style="margin-top: 5px; padding-left: 18px; color: #cccccc; font-size: 15px;">
+					<li>💰 15.000$ bani</li>
+					<li>🪙 100 AUR</li>
+					<li>🧠 10.000 XP minim</li>
+				</ul>
+			</div>
+		]] }
+	})
+
+    -- Location-wide book
+    if location.craftbookCategory and location.craftbookCategory ~= "" then
+        LocationPage:RegisterElement("button", {
+            label = "📖 Cartea cu toate categoriile",
+            style = { padding = "5px" },
+        }, function()
+            BccUtils.RPC:Call("bcc-crafting:giveBook", {
+                item = location.craftbookCategory,
+                label = locationLabel
+            })
+        end)
+    end
+
+    -- Divider
+    LocationPage:RegisterElement("line", { style = { marginTop = "6px", marginBottom = "6px" } })
+
+    -- Category books
+    for _, category in ipairs(location.categories) do
+        if category.craftBookItem and category.craftBookItem ~= "" then
+            LocationPage:RegisterElement("button", {
+                label = "📙 " .. (category.label or category.name),
+                style = { padding = "4px" }
+            }, function()
+                BccUtils.RPC:Call("bcc-crafting:giveBook", {
+                    item = category.craftBookItem,
+                    label = category.label or category.name
+                })
+            end)
+        end
+    end
+
+    -- Footer separator
+    LocationPage:RegisterElement("line", {
+        slot = "footer",
+        style = {}
+    })
+
+    -- Back to locations
+    LocationPage:RegisterElement("button", {
+        label = "⬅️ Inapoi la locatii",
+        slot = "footer",
+        style = { marginTop = "10px", fontWeight = "bold" }
+    }, function()
+        openCraftbookSelectionMenu(currentCraftbookPage)
+    end)
+
+    LocationPage:RegisterElement("bottomline", { slot = "footer", style = {} })
+
+    BCCCraftingMenu:Open({ startupPage = LocationPage })
+end
+
 local isCrafting = false
 
 function startCrafting(item)
 	devPrint("Crafting started for item: " .. item.itemLabel .. ", duration: " .. item.duration)
 
-	local duration = item.duration -- Duration in seconds
+	local duration = item.duration                  -- Duration in seconds
 	local endTime = GetGameTimer() + (duration * 1000) -- Calculate end time in milliseconds
 
 	-- Create ongoing crafting list format to match the server data structure
@@ -470,28 +699,21 @@ function openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories
 			local itemAmount = craftingLog.itemAmount
 			local formattedTime = formatTime(remainingTime)
 
-			-- Generate the HTML content for each crafting item, with default values if nil
-			craftingListHtml = craftingListHtml
-				.. string.format(
-					[[
-                <div style="text-align:center; margin: 20px 0; font-family: 'Crimson Text', serif; color: #4E342E;">
-                    <p style="font-size:20px; font-weight: bold;">%s x%d</p>
-                    <p style="font-size:18px; color: #8A2BE2;">%s %s</p>
-                </div>
-            ]],
-					craftingLog.itemLabel or "Unknown Item",
-					itemAmount,
-					_U("remainingTime"),
-					formattedTime
-				)
+			craftingListHtml = craftingListHtml .. [[
+				<div style="text-align:center; margin: 20px 0; font-family: 'Crimson Text', serif; color: #4E342E;">
+					<p style="font-size:20px; font-weight: bold;">]] ..
+				(craftingLog.itemLabel or "Unknown Item") .. [[ x]] .. tostring(itemAmount) .. [[</p>
+					<p style="font-size:18px; color: #8A2BE2;">]] .. _U("remainingTime") .. [[ ]] .. formattedTime .. [[</p>
+				</div>
+			]]
 
 			devPrint(
 				"Ongoing crafting: "
-					.. (craftingLog.itemLabel or "Unknown Item")
-					.. " x"
-					.. itemAmount
-					.. ", Remaining Time: "
-					.. formattedTime
+				.. (craftingLog.itemLabel or "Unknown Item")
+				.. " x"
+				.. itemAmount
+				.. ", Remaining Time: "
+				.. formattedTime
 			)
 		end
 
@@ -527,11 +749,8 @@ function openCraftingProgressMenu(ongoingCraftingList, currentLocationCategories
 		style = {},
 		slot = "footer",
 	}, function()
-		devPrint("Returning to main menu from progress menu.")
 		devPrint("currentLocationCategories: " .. json.encode(currentLocationCategories)) -- Debug print for categories
-		BCCCraftingMenu:Close()
-
-		TriggerEvent("bcc-crafting:openmenu", currentLocationCategories) -- Go back to the category list
+		TriggerEvent("bcc-crafting:openmenu", currentLocationCategories)            -- Go back to the category list
 	end)
 
 	progressMenu:RegisterElement("bottomline", {
@@ -612,7 +831,6 @@ function openCompletedCraftingMenu(completedCraftingList, currentLocationCategor
 			}, function()
 				devPrint("Collecting crafted item: " .. craftingLog.itemLabel)
 
-				BCCCraftingMenu:Close()
 				BccUtils.RPC:Call("bcc-crafting:collectCraftedItem", {
 					craftingLog = craftingLog,
 					locationId = currentCraftingLocationId,
@@ -629,7 +847,19 @@ function openCompletedCraftingMenu(completedCraftingList, currentLocationCategor
 							TriggerEvent("bcc-crafting:sendCompletedCraftingList", completedCraftingData)
 						else
 							devPrint("[DEBUG] No completed crafting data found.")
-							VORPcore.NotifyRightTip(_U("NoCompletedCrafting"), 4000)
+							FeatherMenu:Notify({
+								message = _U("NoCompletedCrafting"),
+								type = "error",
+								autoClose = 4000,
+								position = "bottom-center",
+								icon = false,
+								hideProgressBar = false,
+								rtl = false,
+								transition = "slide",
+								style = {},
+								toastStyle = {},
+								progressStyle = {}
+							})
 						end
 					end)
 				end)

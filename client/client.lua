@@ -7,8 +7,7 @@ CreateThread(function()
 
     local CraftingMenuPrompt = BccUtils.Prompts:SetupPromptGroup()
 
-    local craftingprompt = CraftingMenuPrompt:RegisterPrompt(_U('PromptName'), 0x760A9C6F, 1, 1, true, 'hold',
-        { timedeventhash = 'MEDIUM_TIMED_EVENT' })
+    local craftingprompt = CraftingMenuPrompt:RegisterPrompt(_U('PromptName'), 0x760A9C6F, 1, 1, true, 'hold', { timedeventhash = 'MEDIUM_TIMED_EVENT' })
 
     -- Iterate over CraftingLocations from the config
     for _, location in pairs(CraftingLocations) do
@@ -78,10 +77,11 @@ CreateThread(function()
     end
 end)
 
-RegisterNetEvent("bcc-crafting:craftbook:use")
-AddEventHandler("bcc-crafting:craftbook:use", function(category)
+BccUtils.RPC:Register("bcc-crafting:craftbook:use", function(category, cb)
     local playerPed = PlayerPedId()
     local coords = GetEntityCoords(playerPed)
+
+    currentCraftingLocationId = category.locationId or "unknown"
 
     -- Spawn campfire
     local model = category.campfireModel
@@ -94,30 +94,74 @@ AddEventHandler("bcc-crafting:craftbook:use", function(category)
     SetEntityHeading(myCampfire, GetEntityHeading(playerPed))
     SetEntityAsMissionEntity(myCampfire, true, true)
 
-    -- Setup Anim
+    -- Setup animation
     local time = category.setupTime
     local dict = category.setupAnimDict
     local anim = category.setupAnimName
     local scenario = category.setupScenario
-    local text = _U('PreparingCampFire')
+    local text = _U("PreparingCampFire")
 
     RequestAnimDict(dict)
     while not HasAnimDictLoaded(dict) do Wait(100) end
 
     FreezeEntityPosition(playerPed, true)
     TaskPlayAnim(playerPed, dict, anim, 8.0, 8.0, -1, 1, 0, true, 0, false, 0, false)
-    progressbar.start(text, time, function() end, 'innercircle')
+    progressbar.start(text, time, function() end, "innercircle")
     Wait(time)
     StopAnimTask(playerPed, dict, anim)
     FreezeEntityPosition(playerPed, false)
 
-    -- Use scenario after setup
+    -- Scenario after setup
     TaskStartScenarioInPlace(playerPed, scenario, -1, true, false, false, false)
 
-    -- Open crafting menu
+    -- Open the crafting menu
     TriggerEvent("bcc-crafting:openmenu", { category })
+
+    if cb then cb(true) end
 end)
 
+BccUtils.RPC:Register("bcc-crafting:craftbook:useLocation", function(data, cb)
+    currentCraftingLocationId = data.locationId
+
+    local playerPed = PlayerPedId()
+    local coords = GetEntityCoords(playerPed)
+
+    -- Campfire setup
+    local model = "p_campfire03x"
+    RequestModel(model)
+    while not HasModelLoaded(model) do Wait(10) end
+
+    local offset = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, 1.0, 0.0)
+    myCampfire = CreateObject(model, offset.x, offset.y, offset.z, true, false, true)
+    PlaceObjectOnGroundProperly(myCampfire)
+    SetEntityHeading(myCampfire, GetEntityHeading(playerPed))
+    SetEntityAsMissionEntity(myCampfire, true, true)
+
+    -- Animation
+    local time = 5000
+    local dict = "mini_games@story@beechers@build_floor@john"
+    local anim = "hammer_loop_good"
+    local scenario = "WORLD_HUMAN_WRITE_NOTEBOOK"
+    local text = _U("PreparingCampFire")
+
+    RequestAnimDict(dict)
+    while not HasAnimDictLoaded(dict) do Wait(100) end
+
+    FreezeEntityPosition(playerPed, true)
+    TaskPlayAnim(playerPed, dict, anim, 8.0, 8.0, -1, 1, 0, true, 0, false, 0, false)
+    progressbar.start(text, time, function() end, "innercircle")
+    Wait(time)
+    StopAnimTask(playerPed, dict, anim)
+    FreezeEntityPosition(playerPed, false)
+
+    -- Scenario
+    TaskStartScenarioInPlace(playerPed, scenario, -1, true, false, false, false)
+
+    -- Open menu
+    TriggerEvent("bcc-crafting:openmenu", data.categories)
+
+    if cb then cb(true) end
+end)
 
 -- Cleanup when the resource stops
 AddEventHandler("onResourceStop", function(resource)

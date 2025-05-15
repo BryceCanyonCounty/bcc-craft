@@ -73,5 +73,6 @@ Locales["ro_lang"] = {
     NoJobNeeded = "Fara",
     CraftingComplete = "Ai terminat de craftat",
     CraftingFailed = "Nu ai putut crafta acest obiect",
-    PreparingCampFire = "Se prepara focul de tabara..."
+    PreparingCampFire = "Se prepara focul de tabara...",
+    maxCraftAmount = "Cantitatea maxima ce poate fi craftata: ",
 }
