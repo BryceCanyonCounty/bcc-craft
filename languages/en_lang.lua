@@ -73,5 +73,6 @@ Locales["en_lang"] = {
     NoJobNeeded = "N/A",
     CraftingComplete = "Crafting Completed",
     CraftingFailed = "Crafting Failed",
-    PreparingCampFire = "Setting up campfire..."
+    PreparingCampFire = "Preparing the campfire...",
+    maxCraftAmount = "Max Craftable Amount: ",
 }

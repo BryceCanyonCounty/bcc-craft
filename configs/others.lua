@@ -4,6 +4,7 @@ local others = {
     ---- OIL REFINERY - OIL LANDS ----
     {
         locationId = "refinery",
+		craftbookCategory = "refinery_craftbook",
         coords = {
             vector3(488.98, 671.69, 117.34)
         },
@@ -44,7 +45,8 @@ local others = {
                         requiredItems = {
                             { itemName = "petroleum", itemLabel = "Crude Oil", itemCount = 10, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "petrol",
@@ -57,7 +59,8 @@ local others = {
                         requiredItems = {
                             { itemName = "petroleum", itemLabel = "Crude Oil", itemCount = 10, removeItem = true },
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     }
                 }
             }
@@ -106,7 +109,8 @@ local others = {
                         requiredItems = {
                             { itemName = "tobacco_leafs", itemLabel = "Tobacco Leaves", itemCount = 1, removeItem = true }
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cigar",
@@ -119,7 +123,8 @@ local others = {
                         requiredItems = {
                             { itemName = "tobaccopipe", itemLabel = "Dried Tobacco", itemCount = 3, removeItem = true }
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cigarette",
@@ -133,7 +138,8 @@ local others = {
                             { itemName = "tobaccopipe",  itemLabel = "Dried Tobacco", itemCount = 5, removeItem = true },
                             { itemName = "rollingpaper", itemLabel = "Rolling Paper", itemCount = 5, removeItem = true }
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     },
                     {
                         itemName = "cigaret",
@@ -147,7 +153,8 @@ local others = {
                             { itemName = "cigarette", itemLabel = "Cigarette", itemCount = 10, removeItem = true },
                             { itemName = "paper",     itemLabel = "Paper",     itemCount = 1,  removeItem = true }
                         },
-                        playAnimation = false
+                        playAnimation = false,
+                        requiredPlaytimeMinutes = 0
                     }
                 }
             }

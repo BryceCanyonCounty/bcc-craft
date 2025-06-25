@@ -63,6 +63,25 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 		return
 	end
 
+	if Config.useBccUserlog then
+		local identifier = Character.identifier
+		devPrint("[Crafting] Character identifier: " .. tostring(identifier))
+
+		local playerData = UserLogAPI:GetUserBySteamID(identifier)
+		local playtime = playerData and playerData.players_playTime
+
+		devPrint("[Crafting] Total playtime for " .. identifier .. ": " .. tostring(playtime) .. " minutes")
+
+		local requiredMinutes = item.requiredPlaytimeMinutes
+		if playtime and playtime < requiredMinutes then
+			local requiredHours = math.floor(requiredMinutes / 60)
+			VORPcore.NotifyRightTip(source, "You need at least " .. requiredHours .. " hours of playtime (" .. requiredMinutes .. " minutes) to craft this item.", 5000)
+			devPrint("[Crafting] Player has insufficient playtime (" .. playtime .. " < " .. requiredMinutes .. ")")
+			cb(false)
+			return
+		end
+
+	end
 	-- Check player's crafting level
 	GetPlayerCraftingData(playerId, function(xp, level)
 		if level < item.requiredLevel then
@@ -77,7 +96,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 			-- Retrieve the player's weapon inventory and limit the weapon count
 			exports.vorp_inventory:getUserInventoryWeapons(source, function(weapons)
 				local currentWeaponCount = #weapons
-				local maxWeaponsAllowed = 5 -- Adjust this based on your server's maximum allowed weapon count
+				local maxWeaponsAllowed = Config.maxWeaponsAllowed
 			end)
 		else
 			-- Regular item limit check for non-weapon items
@@ -85,11 +104,11 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 			local itemLimit = itemDBData and itemDBData.limit
 			devPrint(
 				"[DEBUG] Non-weapon item: "
-					.. tostring(item.itemName)
-					.. " - Item limit: "
-					.. tostring(itemLimit)
-					.. ", Requested amount: "
-					.. tostring(itemConfigAmount)
+				.. tostring(item.itemName)
+				.. " - Item limit: "
+				.. tostring(itemLimit)
+				.. ", Requested amount: "
+				.. tostring(itemConfigAmount)
 			)
 			if itemLimit and itemConfigAmount > itemLimit then
 				VORPcore.NotifyRightTip(source, _U("CannotCraftOverLimit") .. item.itemLabel, 4000)
@@ -104,9 +123,9 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 				local requiredItemCount = reqItem.itemCount * inputAmount
 				devPrint(
 					"[DEBUG] Attempting to remove item: "
-						.. tostring(reqItem.itemName)
-						.. " | Required Count: "
-						.. tostring(requiredItemCount)
+					.. tostring(reqItem.itemName)
+					.. " | Required Count: "
+					.. tostring(requiredItemCount)
 				)
 
 				-- Attempt to remove the item
@@ -115,9 +134,9 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 				if not subItem then
 					devPrint(
 						"[ERROR] Failed to remove item: "
-							.. tostring(reqItem.itemName)
-							.. " | Required: "
-							.. tostring(requiredItemCount)
+						.. tostring(reqItem.itemName)
+						.. " | Required: "
+						.. tostring(requiredItemCount)
 					)
 					VORPcore.NotifyRightTip(source, _U("RemoveItemFailed", reqItem.itemLabel), 4000)
 					cb(false)
@@ -125,9 +144,9 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 				else
 					devPrint(
 						"[DEBUG] Successfully removed item: "
-							.. tostring(reqItem.itemName)
-							.. " | Amount Removed: "
-							.. tostring(requiredItemCount)
+						.. tostring(reqItem.itemName)
+						.. " | Amount Removed: "
+						.. tostring(requiredItemCount)
 					)
 				end
 			else
@@ -144,15 +163,15 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 					return
 				end
 
-				local maxDurability = 100
-				local useDurability = 5
+				local maxDurability = reqItem.maxDurability
+				local useDurability = reqItem.useDurability
 
 				-- Check if item metadata exists
 				if not next(item.metadata) then
 					devPrint(
 						"[DEBUG] No durability metadata found for item: "
-							.. tostring(reqItem.itemName)
-							.. ". Initializing durability."
+						.. tostring(reqItem.itemName)
+						.. ". Initializing durability."
 					)
 
 					-- Initialize durability
@@ -164,18 +183,18 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 					exports.vorp_inventory:setItemMetadata(source, item.id, newData, 1)
 					devPrint(
 						"[DEBUG] Durability initialized for item: "
-							.. tostring(reqItem.itemName)
-							.. " | New Durability: "
-							.. tostring(maxDurability - useDurability)
+						.. tostring(reqItem.itemName)
+						.. " | New Durability: "
+						.. tostring(maxDurability - useDurability)
 					)
 				else
 					-- Handle durability reduction
 					local currentDurability = item.metadata.durability
 					devPrint(
 						"[DEBUG] Current durability for item: "
-							.. tostring(reqItem.itemName)
-							.. " | Durability: "
-							.. tostring(currentDurability)
+						.. tostring(reqItem.itemName)
+						.. " | Durability: "
+						.. tostring(currentDurability)
 					)
 
 					if currentDurability <= useDurability then
@@ -194,9 +213,9 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 						exports.vorp_inventory:setItemMetadata(source, item.id, newData, 1)
 						devPrint(
 							"[DEBUG] Updated durability for item: "
-								.. tostring(reqItem.itemName)
-								.. " | New Durability: "
-								.. tostring(newDurability)
+							.. tostring(reqItem.itemName)
+							.. " | New Durability: "
+							.. tostring(newDurability)
 						)
 					end
 				end
@@ -220,7 +239,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 		if item.playAnimation then
 			craftingData.timestamp = os.time() - totalDuration -- Set to expected completion time
 		else
-			craftingData.timestamp = os.time() -- Track time from now
+			craftingData.timestamp = os.time()        -- Track time from now
 		end
 
 		-- Insert crafting attempt into database
@@ -238,14 +257,14 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 					BccUtils.RPC:Call("bcc-crafting:StartCrafting", { item = item }, nil, source)
 					Discord:sendMessage(
 						"Player ID: "
-							.. tostring(source)
-							.. " started crafting "
-							.. tostring(item.itemLabel)
-							.. ". Amount: "
-							.. tostring(itemConfigAmount)
-							.. ". Total Duration: "
-							.. tostring(totalDuration)
-							.. "s"
+						.. playerId
+						.. " started crafting "
+						.. tostring(item.itemLabel)
+						.. ". Amount: "
+						.. tostring(itemConfigAmount)
+						.. ". Total Duration: "
+						.. tostring(totalDuration)
+						.. "s"
 					)
 					cb(true)
 				else
@@ -283,7 +302,8 @@ BccUtils.RPC:Register("bcc-crafting:CanCraft", function(params, cb, source)
 			end
 		end
 		if not valid then
-			return cb(false, _U("InvalidJobForCrafting") .. item.itemLabel)
+			VORPcore.NotifyRightTip(source, _U("InvalidJobForCrafting") .. item.itemLabel, 4000)
+			return cb(false)
 		end
 	end
 
@@ -293,14 +313,16 @@ BccUtils.RPC:Register("bcc-crafting:CanCraft", function(params, cb, source)
 		local has = exports.vorp_inventory:getItemCount(source, nil, reqItem.itemName)
 
 		if has < required then
-			return cb(false, _U("MissingItem") .. (reqItem.itemLabel or reqItem.itemName))
+			VORPcore.NotifyRightTip(source, _U("MissingItem") .. (reqItem.itemLabel or reqItem.itemName), 4000)
+			return cb(false)
 		end
 	end
 
 	-- Level check
 	GetPlayerCraftingData(Character.charIdentifier, function(xp, level)
 		if level < item.requiredLevel then
-			return cb(false, _U("RequiredLevel") .. item.requiredLevel)
+			VORPcore.NotifyRightTip(source, _U("RequiredLevel") .. item.requiredLevel, 4000)
+			return cb(false)
 		end
 		cb(true) -- Passed all checks
 	end)
@@ -432,10 +454,10 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 				-- Send a message to Discord
 				local discordMessage = string.format(
 					"**Crafting Completion**\n\n"
-						.. "**Player:** %s %s (ID: %s)\n"
-						.. "**Crafted Weapon:** %s\n"
-						.. "**XP Gained:** %d XP\n"
-						.. "**Weapon Collected Successfully**",
+					.. "**Player:** %s %s (ID: %s)\n"
+					.. "**Crafted Weapon:** %s\n"
+					.. "**XP Gained:** %d XP\n"
+					.. "**Weapon Collected Successfully**",
 					firstname,
 					lastname,
 					playerId,
@@ -507,10 +529,10 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 			-- Send a message to Discord
 			local discordMessage = string.format(
 				"**Crafting Completion**\n\n"
-					.. "**Player:** %s %s (ID: %s)\n"
-					.. "**Crafted Item:** %s x%d\n"
-					.. "**XP Gained:** %d XP\n"
-					.. "**Item Collected Successfully**",
+				.. "**Player:** %s %s (ID: %s)\n"
+				.. "**Crafted Item:** %s x%d\n"
+				.. "**XP Gained:** %d XP\n"
+				.. "**Item Collected Successfully**",
 				firstname,
 				lastname,
 				playerId,
@@ -575,10 +597,10 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 				-- Send a message to Discord
 				local discordMessage = string.format(
 					"**Crafting Completion**\n\n"
-						.. "**Player:** %s %s (ID: %s)\n"
-						.. "**Crafted Item:** %s x%d\n"
-						.. "**XP Gained:** %d XP\n"
-						.. "**Item Collected Successfully**",
+					.. "**Player:** %s %s (ID: %s)\n"
+					.. "**Crafted Item:** %s x%d\n"
+					.. "**XP Gained:** %d XP\n"
+					.. "**Item Collected Successfully**",
 					firstname,
 					lastname,
 					playerId,
@@ -769,7 +791,7 @@ function CalculateLevelFromXP(xp)
 			-- Calculate level within the current range
 			level = threshold.minLevel + math.floor(remainingXP / threshold.xpPerLevel)
 			remainingXP = remainingXP % threshold.xpPerLevel -- Update remaining XP after level calculation
-			break -- Exit once level and remaining XP are determined for current threshold
+			break                                   -- Exit once level and remaining XP are determined for current threshold
 		end
 	end
 
@@ -809,32 +831,39 @@ end
 
 -- Register usable items for crafting books
 for _, location in ipairs(CraftingLocations) do
-	for _, category in ipairs(location.categories) do
-		local craftBookItem = category.craftBookItem
+    -- Register book for the whole location
+    if location.craftbookCategory and location.craftbookCategory ~= "" then
+        exports.vorp_inventory:registerUsableItem(location.craftbookCategory, function(data)
+            local src = data.source
+            exports.vorp_inventory:closeInventory(src)
 
-		if craftBookItem and craftBookItem ~= "" then
-			exports.vorp_inventory:registerUsableItem(craftBookItem, function(data)
-				local src = data.source
-				exports.vorp_inventory:closeInventory(src)
+		BccUtils.RPC:Call("bcc-crafting:craftbook:useLocation", {
+			locationLabel = location.blip.label or "Crafting",
+			locationId = location.locationId,
+			categories = location.categories
+		}, nil, src)
 
-				-- Find the category and send to client
-				for _, location in ipairs(CraftingLocations) do
-					for _, category in ipairs(location.categories) do
-						if category.craftBookItem == craftBookItem then
-							TriggerClientEvent("bcc-crafting:craftbook:use", src, category)
-							return
-						end
-					end
-				end
-			end)
-		end
-	end
+        end, GetCurrentResourceName())
+    end
+
+    -- Register individual category books as fallback
+    for _, category in ipairs(location.categories) do
+		category.locationId = location.locationId
+        local craftBookItem = category.craftBookItem
+        if craftBookItem and craftBookItem ~= "" then
+            exports.vorp_inventory:registerUsableItem(craftBookItem, function(data)
+                local src = data.source
+                exports.vorp_inventory:closeInventory(src)
+				BccUtils.RPC:Call("bcc-crafting:craftbook:use", category, nil, src)
+            end, GetCurrentResourceName())
+        end
+    end
 end
 
 -- Register the RPC for getting item limit
 BccUtils.RPC:Register("bcc-crafting:getItemLimit", function(params, cb, source)
 	local itemName = params.itemName
-	devPrint("Received request to fetch item limit for item:", tostring(itemName or "No Item Name Provided"))
+	devPrint("Received request to fetch item limit for item: " .. tostring(itemName or "No Item Name Provided"))
 
 	-- Validate the itemName
 	if not itemName or itemName == "" then
@@ -844,17 +873,75 @@ BccUtils.RPC:Register("bcc-crafting:getItemLimit", function(params, cb, source)
 	end
 
 	-- Fetch item data from vorp_inventory
-	devPrint("[DEBUG] Fetching item limit from database for item:", itemName)
+	devPrint("[DEBUG] Fetching item limit from database for item: " .. itemName)
 	local itemDBData = exports.vorp_inventory:getItemDB(itemName)
 
 	-- Handle the response
 	if itemDBData and itemDBData.limit then
-		devPrint("[DEBUG] Item data found for:", itemName, "with limit:", tostring(itemDBData.limit))
+		devPrint("[DEBUG] Item data found for: " .. itemName, " with limit: " .. tostring(itemDBData.limit))
 		cb(itemDBData.limit) -- Send back the item limit
 	else
 		devPrint("[ERROR] No data found for item:", itemName)
 		cb("N/A") -- Respond with "N/A" if no data is found
 	end
+end)
+
+-- Register the RPC for getting weapon limit
+BccUtils.RPC:Register("bcc-crafting:getWeaponLimit", function(params, cb, source)
+    devPrint("Received request to fetch weapon limit for source: " .. tostring(source))
+
+    -- Fetch all weapons in the player's inventory
+    exports.vorp_inventory:getUserInventoryWeapons(source, function(weapons)
+        if weapons and #weapons > 0 then
+            local currentWeaponCount = #weapons
+            local maxWeaponsAllowed = Config.maxWeaponsAllowed
+            devPrint("[DEBUG] Current weapon count: " .. currentWeaponCount .. " | Max allowed: " .. maxWeaponsAllowed)
+
+            if currentWeaponCount >= maxWeaponsAllowed then
+                cb(false) -- Player has reached the weapon limit
+            else
+                cb(true) -- Player can carry more weapons
+            end
+        else
+            devPrint("[DEBUG] No weapons found in inventory for source: " .. tostring(source))
+            cb(true) -- No weapons, so player can carry more
+        end
+    end)
+end)
+
+BccUtils.RPC:Register('bcc-crafting:GetMaxCraftAmount', function(params, cb, source)
+	local item = params.item
+	if not item then return cb(0) end
+
+	local Character = VORPcore.getUser(source).getUsedCharacter
+	if not Character then return cb(0) end
+
+	local maxCraftable = math.huge
+
+	for _, reqItem in ipairs(item.requiredItems) do
+		local has = exports.vorp_inventory:getItemCount(source, nil, reqItem.itemName)
+		if reqItem.removeItem then
+			-- Only calculate max craftable for removable items
+			if reqItem.itemCount > 0 then
+				local possible = math.floor(has / reqItem.itemCount)
+				if possible < maxCraftable then
+					maxCraftable = possible
+				end
+			end
+		else
+			-- For non-removable (tools etc), just check they exist
+			if has <= 0 then
+				maxCraftable = 0
+				break -- No tool = cannot craft at all
+			end
+		end
+	end
+
+	if maxCraftable == math.huge then
+		maxCraftable = 0
+	end
+
+	cb(maxCraftable)
 end)
 
 -- Function to update crafting status
@@ -885,6 +972,115 @@ function getConfigItemAmount(itemName)
 	devPrint("[ERROR] Item not found in CraftingLocations: " .. itemName)
 	return nil -- Return nil if item is not found
 end
+
+BccUtils.RPC:Register("bcc-crafting:giveBook", function(data, cb, source)
+    local itemName = data.item
+    if not itemName then
+        if cb then cb(false) end
+        return
+    end
+
+    local itemLabel = data.label or itemName
+    local amount = data.amount or 1
+    local goldCost = 100
+    local moneyCost = 15000
+    local requiredXP = 150000
+
+    local user = VORPcore.getUser(source)
+    if not user then
+        if cb then cb(false) end
+        return
+    end
+
+    local char = user.getUsedCharacter
+    if not char then
+        if cb then cb(false) end
+        return
+    end
+
+    local money = char.money
+    local gold = char.gold
+    local xp = char.xp
+
+    -- ✅ Check XP requirement
+    if xp < requiredXP then
+        VORPcore.NotifyRightTip(source, "Ai nevoie de level 150 pentru a obtine aceasta carte.", 5000)
+        if cb then cb(false) end
+        return
+    end
+
+    -- Check both currencies
+    if money < moneyCost or gold < goldCost then
+        VORPcore.NotifyRightTip(source, string.format(
+            "Ai nevoie de %d$ si %d galbeni pentru a obtine cartea: %s",
+            moneyCost, goldCost, itemLabel
+        ), 5000)
+        if cb then cb(false) end
+        return
+    end
+
+    -- Check inventory space
+    local canCarryItems = exports.vorp_inventory:canCarryItems(source, amount, nil)
+    local canCarry = exports.vorp_inventory:canCarryItem(source, itemName, amount, nil)
+
+    if not (canCarry and canCarryItems) then
+        VORPcore.NotifyRightTip(source, "Nu ai suficient spatiu pentru: " .. itemLabel, 4000)
+        if cb then cb(false) end
+        return
+    end
+
+    -- Deduct both currencies
+    char.removeCurrency(0, moneyCost) -- money
+    char.removeCurrency(1, goldCost)  -- gold
+
+    -- Give the book
+    exports.vorp_inventory:addItem(source, itemName, amount, nil, nil)
+
+    -- Notify player
+    VORPcore.NotifyRightTip(source, string.format(
+        "Ai primit: %dx %s pentru %d$ si %d galbeni",
+        amount, itemLabel, moneyCost, goldCost
+    ), 5000)
+
+    -- Discord log
+    local message = string.format(
+        "**Craftbook Purchased**\n\n**Player:** %s %s (ID: %s)\n**Item:** %s x%d\n**Gold Spent:** %d\n**Money Spent:** %d\n**XP:** %d",
+        char.firstname, char.lastname, source, itemLabel, amount, goldCost, moneyCost, xp
+    )
+    Discord:sendMessage(message)
+
+    if cb then cb(true) end
+end)
+
+--TO BE TESTED
+--[[[AddEventHandler("playerDropped", function(reason)
+    local src = source
+    if activeCrafting[src] then
+        local craftingData = activeCrafting[src]
+        local elapsedTime = os.time() - craftingData.startTime
+        local remainingTime = craftingData.duration - elapsedTime
+
+        devPrint("[DEBUG] Player dropped (Source: " .. tostring(src) .. "). Crafting in progress detected.")
+
+        if remainingTime > 0 then
+            MySQL.update.await(
+                "UPDATE bcc_crafting_log SET duration = @duration, timestamp = @timestamp WHERE id = @id",
+                {
+                    ["@duration"] = remainingTime,
+                    ["@timestamp"] = os.time(),
+                    ["@id"] = craftingData.item.craftingId
+                }
+            )
+            devPrint("[DEBUG] Updated crafting log for disconnected player. Remaining time saved: " .. tostring(remainingTime) .. " seconds.")
+        else
+            devPrint("[DEBUG] Crafting already completed, no database update needed.")
+        end
+
+        activeCrafting[src] = nil
+    else
+        devPrint("^5[DEBUG]^7 Player dropped (Source: " .. tostring(src) .. "). No active crafting found.")
+    end
+end)]]--
 
 -- Check for version updates
 BccUtils.Versioner.checkFile(GetCurrentResourceName(), "https://github.com/BryceCanyonCounty/bcc-craft")

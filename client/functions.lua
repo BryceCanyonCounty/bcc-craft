@@ -88,15 +88,13 @@ function attemptCraftItem(item, amount)
     local ped = PlayerPedId()
     local durationMs = (tonumber(item.duration)) * item.itemAmount * 1000
     devPrint("[CRAFTING] Total crafting duration in milliseconds: " .. tostring(durationMs))
-    print("[CLIENT] Sending item to CanCraft: " .. json.encode(item))
+    devPrint("[CLIENT] Sending item to CanCraft: " .. json.encode(item))
     BccUtils.RPC:Call("bcc-crafting:CanCraft", { item = item, locationId = currentCraftingLocationId }, function(canCraft, message)
         if not canCraft then
-            VORPcore.NotifyRightTip("Cannot start crafting.", 4000)
+            --VORPcore.NotifyRightTip("Cannot start crafting.", 4000)
             return
         end
 
-        -- Passed validation
-        BCCCraftingMenu:Close()
         isCrafting = true
 
         if item.playAnimation then
@@ -106,7 +104,19 @@ function attemptCraftItem(item, amount)
                 isCrafting = false
                 ClearPedTasks(ped)
                 SetNuiFocus(false, false)
-                VORPcore.NotifyRightTip(_U("CraftingCanceled"), 3000)
+                FeatherMenu:Notify({
+                    message = _U("CraftingCanceled"),
+                    type = "error",
+                    autoClose = 4000,
+                    position = "bottom-center",
+                    icon = false,
+                    hideProgressBar = false,
+                    rtl = false,
+                    transition = "slide",
+                    style = {},
+                    toastStyle = {},
+                    progressStyle = {}
+                })
                 TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
             end)
 
@@ -121,9 +131,33 @@ function attemptCraftItem(item, amount)
                     -- Now do the real crafting
                     BccUtils.RPC:Call("bcc-crafting:AttemptCraft", { item = item, locationId = currentCraftingLocationId }, function(success, err)
                         if success then
-                            VORPcore.NotifyRightTip(_U("CraftingComplete"), 4000)
+                            FeatherMenu:Notify({
+                                message = _U("CraftingComplete"),
+                                type = "success",
+                                autoClose = 4000,
+                                position = "bottom-center",
+                                icon = false,
+                                hideProgressBar = false,
+                                rtl = false,
+                                transition = "slide",
+                                style = {},
+                                toastStyle = {},
+                                progressStyle = {}
+                            })
                         else
-                            VORPcore.NotifyRightTip(_U("CraftingFailed"), 4000)
+                            FeatherMenu:Notify({
+                                message = _U("CraftingFailed"),
+                                type = "error",
+                                autoClose = 4000,
+                                position = "bottom-center",
+                                icon = false,
+                                hideProgressBar = false,
+                                rtl = false,
+                                transition = "slide",
+                                style = {},
+                                toastStyle = {},
+                                progressStyle = {}
+                            })
                         end
                         TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
                     end)
@@ -141,9 +175,33 @@ function attemptCraftItem(item, amount)
             -- No animation, do crafting immediately
             BccUtils.RPC:Call("bcc-crafting:AttemptCraft", { item = item, locationId = currentCraftingLocationId }, function(success, err)
                 if success then
-                    VORPcore.NotifyRightTip("Crafting started successfully for " .. item.itemLabel, 4000)
+                    FeatherMenu:Notify({
+                        message = "Crafting started successfully for " .. item.itemLabel,
+                        type = "success",
+                        autoClose = 4000,
+                        position = "bottom-center",
+                        icon = false,
+                        hideProgressBar = false,
+                        rtl = false,
+                        transition = "slide",
+                        style = {},
+                        toastStyle = {},
+                        progressStyle = {}
+                    })
                 else
-                    VORPcore.NotifyRightTip("Failed to start crafting.", 4000)
+                    FeatherMenu:Notify({
+                        message = "Failed to start crafting",
+                        type = "error",
+                        autoClose = 4000,
+                        position = "bottom-center",
+                        icon = false,
+                        hideProgressBar = false,
+                        rtl = false,
+                        transition = "slide",
+                        style = {},
+                        toastStyle = {},
+                        progressStyle = {}
+                    })  
                 end
                 TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
             end)
@@ -152,26 +210,43 @@ function attemptCraftItem(item, amount)
 end
 
 -- Function to fetch item limit using RPC
-function fetchItemLimit(itemName, callback)
+function fetchItemLimit(itemName, cb)
     devPrint("Requesting item limit for:", tostring(itemName)) -- Debug the itemName
 
     -- Validate the itemName
     if not itemName or itemName == "" then
         devPrint("[ERROR] itemName is nil or empty in fetchItemLimit")
-        callback("N/A") -- Immediately return "N/A" if no valid itemName
+        cb("N/A") -- Immediately return "N/A" if no valid itemName
         return
     end
 
-    -- Make the RPC call to fetch the item limit
+    -- Check if the item is a weapon
+    if string.sub(itemName:lower(), 1, string.len("weapon_")) == "weapon_" then
+        devPrint("[DEBUG] Item is a weapon, fetching weapon limit for:", tostring(itemName))
+
+        -- Make the RPC call to fetch the weapon limit
+        BccUtils.RPC:Call("bcc-crafting:getWeaponLimit", {}, function(canCarry)
+            if canCarry then
+                devPrint("[DEBUG] Weapon limit check passed for:", tostring(itemName))
+                cb("Unlimited") -- Weapons have no limit
+            else
+                devPrint("[ERROR] Weapon limit reached for:", tostring(itemName))
+                cb("LimitReached") -- Indicate that the weapon limit is reached
+            end
+        end)
+        return
+    end
+
+    -- Make the RPC call to fetch the item limit for non-weapons
     BccUtils.RPC:Call("bcc-crafting:getItemLimit", { itemName = itemName }, function(itemLimit)
         if not itemLimit then
             devPrint("[ERROR] Failed to retrieve item limit for item:", tostring(itemName))
-            callback("N/A")
+            cb("N/A")
             return
         end
 
         devPrint("[DEBUG] Item limit received for", tostring(itemName), ":", tostring(itemLimit))
-        callback(itemLimit) -- Pass the item limit to the provided callback
+        cb(itemLimit) -- Pass the item limit to the provided callback
     end)
 end
 
@@ -230,7 +305,19 @@ end
 RegisterNetEvent('bcc-crafting:levelUp')
 AddEventHandler('bcc-crafting:levelUp', function(newLevel)
     devPrint("Player leveled up! New crafting level: " .. newLevel)
-    VORPcore.NotifyRightTip("Congratulations! You have reached crafting level " .. newLevel)
+    FeatherMenu:Notify({
+        message = "Congratulations! You have reached crafting level " .. newLevel,
+        type = "success",
+        autoClose = 4000,
+        position = "bottom-center",
+        icon = false,
+        hideProgressBar = false,
+        rtl = false,
+        transition = "slide",
+        style = {},
+        toastStyle = {},
+        progressStyle = {}
+    })
 end)
 
 function PlayAnim(dict, anim, duration)
