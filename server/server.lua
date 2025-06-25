@@ -970,7 +970,7 @@ function getConfigItemAmount(itemName)
 		end
 	end
 	devPrint("[ERROR] Item not found in CraftingLocations: " .. itemName)
-	return nil -- Return nil if item is not found
+	return nil
 end
 
 BccUtils.RPC:Register("bcc-crafting:giveBook", function(data, cb, source)
@@ -982,9 +982,37 @@ BccUtils.RPC:Register("bcc-crafting:giveBook", function(data, cb, source)
 
     local itemLabel = data.label or itemName
     local amount = data.amount or 1
-    local goldCost = 100
-    local moneyCost = 15000
-    local requiredXP = 150000
+
+    local goldCost, moneyCost, requiredXP
+    local priceEnabled = false
+
+	for _, location in ipairs(CraftingLocations) do
+		if location.craftbookCategory == itemName then
+			-- location-wide book pricing
+			priceEnabled = location.craftbookprice == true
+			goldCost = location.craftbookpricegold
+			moneyCost = location.craftbookpricemoney
+			requiredXP = location.craftbookpricexp
+			break
+		end
+
+		for _, category in ipairs(location.categories) do
+			if category.craftBookItem == itemName then
+				-- category-specific book pricing
+				priceEnabled = category.craftbookprice == true
+				goldCost = category.craftbookpricegold
+				moneyCost = category.craftbookpricemoney
+				requiredXP = category.craftbookpricexp
+				break
+			end
+		end
+	end
+
+    if priceEnabled and (not goldCost or not moneyCost or not requiredXP) then
+        VORPcore.NotifyRightTip(source, _U("priceForCraftBookNotSet"), 5000)
+        if cb then cb(false) end
+        return
+    end
 
     local user = VORPcore.getUser(source)
     if not user then
@@ -998,55 +1026,58 @@ BccUtils.RPC:Register("bcc-crafting:giveBook", function(data, cb, source)
         return
     end
 
-    local money = char.money
-    local gold = char.gold
-    local xp = char.xp
+    if priceEnabled then
+        local money = char.money
+        local gold = char.gold
+        local xp = char.xp
+		local level = math.floor(xp / 1000)
+		local requiredLevel = math.floor(requiredXP / 1000)
+        if xp < requiredXP then
+            VORPcore.NotifyRightTip(source, _U("notEnoughXpForBook", requiredLevel), 5000)
+            if cb then cb(false) end
+            return
+        end
 
-    -- ✅ Check XP requirement
-    if xp < requiredXP then
-        VORPcore.NotifyRightTip(source, "Ai nevoie de level 150 pentru a obtine aceasta carte.", 5000)
-        if cb then cb(false) end
-        return
+        if money < moneyCost or gold < goldCost then
+            VORPcore.NotifyRightTip(source, _U("notEnoughMoneyGoldForBook", moneyCost, goldCost, itemLabel), 5000)
+            if cb then cb(false) end
+            return
+        end
+
+        char.removeCurrency(0, moneyCost)
+        char.removeCurrency(1, goldCost)
     end
 
-    -- Check both currencies
-    if money < moneyCost or gold < goldCost then
-        VORPcore.NotifyRightTip(source, string.format(
-            "Ai nevoie de %d$ si %d galbeni pentru a obtine cartea: %s",
-            moneyCost, goldCost, itemLabel
-        ), 5000)
-        if cb then cb(false) end
-        return
-    end
-
-    -- Check inventory space
     local canCarryItems = exports.vorp_inventory:canCarryItems(source, amount, nil)
     local canCarry = exports.vorp_inventory:canCarryItem(source, itemName, amount, nil)
 
     if not (canCarry and canCarryItems) then
-        VORPcore.NotifyRightTip(source, "Nu ai suficient spatiu pentru: " .. itemLabel, 4000)
+        VORPcore.NotifyRightTip(source, _U("notEnoughSpaceForBook", itemLabel), 4000)
         if cb then cb(false) end
         return
     end
 
-    -- Deduct both currencies
-    char.removeCurrency(0, moneyCost) -- money
-    char.removeCurrency(1, goldCost)  -- gold
-
-    -- Give the book
     exports.vorp_inventory:addItem(source, itemName, amount, nil, nil)
 
-    -- Notify player
-    VORPcore.NotifyRightTip(source, string.format(
-        "Ai primit: %dx %s pentru %d$ si %d galbeni",
-        amount, itemLabel, moneyCost, goldCost
-    ), 5000)
+    if priceEnabled then
+        VORPcore.NotifyRightTip(source, _U("receivedBookPaid", amount, itemLabel, moneyCost, goldCost), 5000)
+    else
+        VORPcore.NotifyRightTip(source, _U("receivedBookFree", amount, itemLabel), 5000)
+    end
 
-    -- Discord log
-    local message = string.format(
-        "**Craftbook Purchased**\n\n**Player:** %s %s (ID: %s)\n**Item:** %s x%d\n**Gold Spent:** %d\n**Money Spent:** %d\n**XP:** %d",
-        char.firstname, char.lastname, source, itemLabel, amount, goldCost, moneyCost, xp
-    )
+    local message = _U("craftbookDiscordTitle") .. "\n\n"
+        .. _U("craftbookDiscordPlayer", char.firstname, char.lastname, source) .. "\n"
+        .. _U("craftbookDiscordItem", itemLabel, amount) .. "\n"
+
+    if priceEnabled then
+        message = message
+            .. _U("craftbookDiscordGold", goldCost) .. "\n"
+            .. _U("craftbookDiscordMoney", moneyCost) .. "\n"
+            .. _U("craftbookDiscordXP", char.xp)
+    else
+        message = message .. _U("craftbookDiscordFree")
+    end
+
     Discord:sendMessage(message)
 
     if cb then cb(true) end

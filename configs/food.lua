@@ -4,6 +4,10 @@ local food = {
     {
         locationId = "food",
 		craftbookCategory = "food_craftbook",
+        craftbookprice = true,
+        craftbookpricegold = 150,
+        craftbookpricemoney = 15000,
+        craftbookpricexp = 90000,
         coords = {
             vector3(-2396.4, -2387.94, 61.46),
             vector3(2543.07, 800.81, 76.37),
@@ -37,6 +41,10 @@ local food = {
                 label = "Meat Dishes",
                 craftBookItem = "food_craftbook",
                 campfireModel = "p_campfire03x",
+                craftbookprice = true,
+                craftbookpricegold = 75,
+                craftbookpricemoney = 9000,
+                craftbookpricexp = 60000,
                 setupAnimDict = "mini_games@story@beechers@build_floor@john",
                 setupAnimName = "hammer_loop_good",
                 setupScenario = "WORLD_HUMAN_WRITE_NOTEBOOK",
@@ -45,6 +53,7 @@ local food = {
                     {
                         itemName = "consumable_breakfast",
                         itemLabel = "Breakfast",
+						requiredJobs = {"chef", "doctor"},
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -59,6 +68,7 @@ local food = {
                     {
                         itemName = "steak",
                         itemLabel = "Grilled Meat",
+						requiredJobs = {"chef", "doctor"}, ---or false
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -72,6 +82,7 @@ local food = {
                     {
                         itemName = "cooked_biggame",
                         itemLabel = "Salted Big Game Dish",
+						requiredJobs = {"chef", "doctor"},
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -86,6 +97,7 @@ local food = {
                     {
                         itemName = "cooked_game",
                         itemLabel = "Salted Game Dish",
+						requiredJobs = {"chef", "doctor"},
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -100,6 +112,7 @@ local food = {
                     {
                         itemName = "cooked_venison",
                         itemLabel = "Venison Dish",
+						requiredJobs = {"chef", "doctor"},
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -114,6 +127,7 @@ local food = {
                     {
                         itemName = "cooked_mutton",
                         itemLabel = "Mutton Dish",
+						requiredJobs = {"chef", "doctor"},
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -128,6 +142,7 @@ local food = {
                     {
                         itemName = "cooked_pork",
                         itemLabel = "Pork Dish",
+						requiredJobs = {"chef", "doctor"},
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -142,6 +157,7 @@ local food = {
                     {
                         itemName = "cooked_bird",
                         itemLabel = "Bird Meat Dish",
+						requiredJobs = {"chef", "doctor"},
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -156,6 +172,7 @@ local food = {
                     {
                         itemName = "consumable_bluegil",
                         itemLabel = "Fish Dish",
+						requiredJobs = {"chef", "doctor"},
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,

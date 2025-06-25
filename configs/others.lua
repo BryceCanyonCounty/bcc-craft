@@ -5,6 +5,9 @@ local others = {
     {
         locationId = "refinery",
 		craftbookCategory = "refinery_craftbook",
+        craftbookprice = true,
+        craftbookpricegold = 150,
+        craftbookpricemoney = 15000,
         coords = {
             vector3(488.98, 671.69, 117.34)
         },
@@ -29,6 +32,10 @@ local others = {
                 label = "Refinery",
                 craftBookItem = "",
                 campfireModel = "p_campfire03x",
+                craftbookprice = true,
+                craftbookpricegold = 75,
+                craftbookpricemoney = 9000,
+                craftbookpricexp = 60000,
                 setupAnimDict = "mini_games@story@beechers@build_floor@john",
                 setupAnimName = "hammer_loop_good",
                 setupScenario = "WORLD_HUMAN_WRITE_NOTEBOOK",
@@ -69,6 +76,10 @@ local others = {
     ---- TOBACCO ----
     {
         locationId = "tobacco",
+        craftbookprice = true,
+        craftbookpricegold = 150,
+        craftbookpricemoney = 15000,
+        craftbookpricexp = 90000,
         coords = {
             vector3(-1822.61, -2425.92, 42.42)
         },
@@ -93,6 +104,10 @@ local others = {
                 label = "Tobacco",
                 craftBookItem = "",
                 campfireModel = "p_campfire03x",
+                craftbookprice = true,
+                craftbookpricegold = 75,
+                craftbookpricemoney = 9000,
+                craftbookpricexp = 60000,
                 setupAnimDict = "mini_games@story@beechers@build_floor@john",
                 setupAnimName = "hammer_loop_good",
                 setupScenario = "WORLD_HUMAN_WRITE_NOTEBOOK",
