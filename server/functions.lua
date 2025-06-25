@@ -2,10 +2,6 @@ VORPcore = exports.vorp_core:GetCore()
 BccUtils = exports['bcc-utils'].initiate()
 Discord = BccUtils.Discord.setup(Config.WebhookLink, Config.WebhookTitle, Config.WebhookAvatar) -- Setup Discord webhook
 
-if Config.useBccUserlog then
-    UserLogAPI = exports['bcc-userlog']:getUserLogAPI()
-end
-
 -- Helper function for debugging in DevMode
 if Config.devMode then
     function devPrint(message)
@@ -13,4 +9,8 @@ if Config.devMode then
     end
 else
     function devPrint(message) end -- No-op if DevMode is disabled
+end
+
+if Config.useBccUserlog then
+    UserLogAPI = exports['bcc-userlog']:getUserLogAPI()
 end

@@ -2,8 +2,12 @@ CraftingLocations = CraftingLocations or {}
 
 local weapons = {
     {
-        locationId = "weapons"
+        locationId = "weapons",
 		craftbookCategory = "weapons_craftbook",
+        craftbookprice = true,
+        craftbookpricegold = 150,
+        craftbookpricemoney = 15000,
+        craftbookpricexp = 90000,
         coords = {
             vector3(414.96, -1275.21, 41.76)
         },
@@ -28,6 +32,10 @@ local weapons = {
                 label = "Melee Weapons",
                 craftBookItem = "",
                 campfireModel = "p_campfire03x",
+                craftbookprice = true,
+                craftbookpricegold = 75,
+                craftbookpricemoney = 9000,
+                craftbookpricexp = 60000,
                 setupAnimDict = "mini_games@story@beechers@build_floor@john",
                 setupAnimName = "hammer_loop_good",
                 setupScenario = "WORLD_HUMAN_WRITE_NOTEBOOK",
@@ -93,6 +101,10 @@ local weapons = {
                 label = "Revolvers",
                 craftBookItem = "",
                 campfireModel = "p_campfire03x",
+                craftbookprice = true,
+                craftbookpricegold = 75,
+                craftbookpricemoney = 9000,
+                craftbookpricexp = 60000,
                 setupAnimDict = "mini_games@story@beechers@build_floor@john",
                 setupAnimName = "hammer_loop_good",
                 setupScenario = "WORLD_HUMAN_WRITE_NOTEBOOK",

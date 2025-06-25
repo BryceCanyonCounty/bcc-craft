@@ -455,7 +455,7 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 
 	if Config.HasCraftBooks then
 		craftingMainMenu:RegisterElement("button", {
-			label = "📖 I-ati cartea de craftat",
+			label = _U("getYourCraftbook"),
 			style = {},
 			slot = "footer",
 		}, function()
@@ -511,7 +511,7 @@ function openCraftbookSelectionMenu(page)
     local CraftBookMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:craftbook:select:" .. currentCraftbookPage)
 
     CraftBookMenu:RegisterElement("header", {
-        value = "📚 Alege o categorie",
+        value = _U("pickACategory"),
         slot = "header",
         style = {}
     })
@@ -521,8 +521,7 @@ function openCraftbookSelectionMenu(page)
 
     for i = startIndex, endIndex do
         local location = CraftingLocations[i]
-        local locationLabel = location.blip and location.blip.label or location.locationId or "Locatie necunoscuta"
-
+        local locationLabel = location.blip and location.blip.label or location.locationId or _U("unknownLocation")
         CraftBookMenu:RegisterElement("button", {
             label = " 📚  " .. locationLabel,
             style = {}
@@ -542,8 +541,6 @@ function openCraftbookSelectionMenu(page)
 		current = currentCraftbookPage,
 		style = {}
 	}, function(data)
-		print("[DEBUG] Arrow pressed:", data.value)
-
 		if data.value == "forward" and currentCraftbookPage < totalPages then
 			openCraftbookSelectionMenu(currentCraftbookPage + 1)
 		elseif data.value == "back" and currentCraftbookPage > 1 then
@@ -551,14 +548,13 @@ function openCraftbookSelectionMenu(page)
 		end
 	end)
 
-    -- Divider
     CraftBookMenu:RegisterElement("line", { 
 		slot = "footer",
 		style = {} 
 	})
 
     CraftBookMenu:RegisterElement("button", {
-        label = "⬅️ Inapoi",
+        label = _U("BackButton"),
         slot = "footer",
         style = {}
     }, function()
@@ -574,7 +570,7 @@ function openCraftbookSelectionMenu(page)
 end
 
 function openCraftbookLocationPage(location)
-    local locationLabel = location.blip and location.blip.label or location.locationId or "Locatie necunoscuta"
+    local locationLabel = location.blip and location.blip.label or location.locationId or _U("unknownLocation")
     local LocationPage = BCCCraftingMenu:RegisterPage("bcc-crafting:location:" .. location.locationId)
 
     -- Header
@@ -584,68 +580,127 @@ function openCraftbookLocationPage(location)
         style = { fontSize = "19px", fontWeight = "bold", marginBottom = "10px" }
     })
 
-    -- 🔔 Requirements display
-	LocationPage:RegisterElement("html", {
-		value = { [[
-			<div style="background: #1a1a1a;">
-				<div style="font-size: 16px; font-weight: bold; color: #ffcc00;">🔒 Cerinte pentru a obtine o carte:</div>
-				<ul style="margin-top: 5px; padding-left: 18px; color: #cccccc; font-size: 15px;">
-					<li>💰 15.000$ bani</li>
-					<li>🪙 100 AUR</li>
-					<li>🧠 10.000 XP minim</li>
-				</ul>
-			</div>
-		]] }
-	})
+    -- Global requirements (location-wide book)
+    local html = ""
+    if location.craftbookprice == true then
+        local money = location.craftbookpricemoney or 0
+        local gold = location.craftbookpricegold or 0
+        local xp = location.craftbookpricexp or 0
+		local requiredLevel = math.floor(location.craftbookpricexp / 1000)
+        html = [[
+            <div style="font-size: 16px; font-weight: bold; color: #ffcc00;">]] .. _U("requirementsForBook") .. [[</div>
+            <ul style="margin-top: 5px; padding-left: 18px; color: #cccccc; font-size: 15px;">
+                <li>💰 ]] .. money .. _U("bookMoney") .. [[</li>
+                <li>🧈 ]] .. gold .. _U("bookGold") .. [[</li>
+                <li>LvL: ]] .. requiredLevel .. _U("bookXP") .. [[</li>
+            </ul>
+        ]]
+    else
+        html = [[
+            <div style="font-size: 16px; font-weight: bold; color: #00cc66;">]] .. _U("bookFree") .. [[</div>
+            <p style="color: #cccccc; font-size: 15px; margin-left: 18px;">]] .. _U("noRequirementsForBook") .. [[</p>
+        ]]
+    end
+
+    LocationPage:RegisterElement("html", { value = { html } })
+    LocationPage:RegisterElement("line", { style = {} })
 
     -- Location-wide book
     if location.craftbookCategory and location.craftbookCategory ~= "" then
         LocationPage:RegisterElement("button", {
-            label = "📖 Cartea cu toate categoriile",
+            label = _U("craftbookAllCategories"),
             style = { padding = "5px" },
         }, function()
             BccUtils.RPC:Call("bcc-crafting:giveBook", {
                 item = location.craftbookCategory,
                 label = locationLabel
             })
+            openCraftbookSelectionMenu(currentCraftbookPage)
         end)
+    else
+        LocationPage:RegisterElement("html", {
+            value = { [[
+                <div style="padding: 10px; color: #999999; font-style: italic;">]]
+                .. _U("noCraftBookAllCategories") ..
+                [[</div>
+            ]] }
+        })
     end
 
-    -- Divider
-    LocationPage:RegisterElement("line", { style = { marginTop = "6px", marginBottom = "6px" } })
+    LocationPage:RegisterElement("line", { style = {} })
 
-    -- Category books
+    -- Category craftbooks
+    local hasCategories = false
+
     for _, category in ipairs(location.categories) do
         if category.craftBookItem and category.craftBookItem ~= "" then
-            LocationPage:RegisterElement("button", {
-                label = "📙 " .. (category.label or category.name),
-                style = { padding = "4px" }
-            }, function()
-                BccUtils.RPC:Call("bcc-crafting:giveBook", {
-                    item = category.craftBookItem,
-                    label = category.label or category.name
-                })
-            end)
+            hasCategories = true
+
+            local priceHtml = ""
+            if category.craftbookprice == true then
+                local money = category.craftbookpricemoney or 0
+                local gold = category.craftbookpricegold or 0
+                local xp = category.craftbookpricexp or 0
+				local requiredLevel = math.floor(category.craftbookpricexp / 1000)
+                priceHtml = [[
+                    <div style="font-size: 14px; color: #cccccc; margin-left: 10px;">
+                        <ul style="margin-top: 5px; padding-left: 18px;">
+                            <li>💰 ]] .. money .. _U("bookMoney") .. [[</li>
+                            <li>🧈 ]] .. gold .. _U("bookGold") .. [[</li>
+                            <li>LVL: ]] .. requiredLevel .. _U("bookXP") .. [[</li>
+                        </ul>
+                    </div>
+                ]]
+            else
+                priceHtml = [[
+                    <div style="font-size: 14px; color: #00cc66; margin-left: 10px;">
+                        🔓 ]] .. _U("bookFree") .. [[
+                    </div>
+                ]]
+            end
+
+		LocationPage:RegisterElement("button", {
+			label = "📙 " .. (category.label or category.name),
+			style = { padding = "4px" }
+		}, function()
+			BccUtils.RPC:Call("bcc-crafting:giveBook", {
+				item = category.craftBookItem,
+				label = category.label or category.name
+			})
+			openCraftbookSelectionMenu(currentCraftbookPage)
+		end)
+
+		-- Display pricing below the button
+		LocationPage:RegisterElement("html", {
+			value = { priceHtml }
+		})
+		else
+			devPrint("Category " .. (category.label or category.name) .. " has no craft book item defined.")
         end
     end
 
-    -- Footer separator
-    LocationPage:RegisterElement("line", {
-        slot = "footer",
-        style = {}
-    })
+    if not hasCategories then
+        LocationPage:RegisterElement("html", {
+            value = { [[
+                <div style="padding: 10px; color: #999999; font-style: italic;">]]
+                .. _U("noCraftBookCategory") ..
+                [[</div>
+            ]] }
+        })
+    end
 
-    -- Back to locations
+    -- Footer navigation
+    LocationPage:RegisterElement("line", { slot = "footer", style = {} })
     LocationPage:RegisterElement("button", {
-        label = "⬅️ Inapoi la locatii",
+        label = _U("BackButton"),
         slot = "footer",
         style = { marginTop = "10px", fontWeight = "bold" }
     }, function()
         openCraftbookSelectionMenu(currentCraftbookPage)
     end)
-
     LocationPage:RegisterElement("bottomline", { slot = "footer", style = {} })
 
+    -- Open the menu
     BCCCraftingMenu:Open({ startupPage = LocationPage })
 end
 
@@ -863,6 +918,7 @@ function openCompletedCraftingMenu(completedCraftingList, currentLocationCategor
 						end
 					end)
 				end)
+				TriggerEvent("bcc-crafting:openmenu", currentLocationCategories)
 			end)
 		end
 	else

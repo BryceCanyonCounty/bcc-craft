@@ -30,9 +30,19 @@ Config = {
         { minLevel = 161, maxLevel = 170, xpPerLevel = 17000 },
         { minLevel = 171, maxLevel = 180, xpPerLevel = 18000 },
         { minLevel = 181, maxLevel = 190, xpPerLevel = 19000 },
-        { minLevel = 191, maxLevel = 200, xpPerLevel = 20000 }
+        { minLevel = 191, maxLevel = 200, xpPerLevel = 20000 },
+        { minLevel = 201, maxLevel = 210, xpPerLevel = 22000 },
+        { minLevel = 211, maxLevel = 220, xpPerLevel = 24000 },
+        { minLevel = 221, maxLevel = 230, xpPerLevel = 26000 },
+        { minLevel = 231, maxLevel = 240, xpPerLevel = 28000 },
+        { minLevel = 241, maxLevel = 250, xpPerLevel = 30000 },
+        { minLevel = 251, maxLevel = 260, xpPerLevel = 32000 },
+        { minLevel = 261, maxLevel = 270, xpPerLevel = 34000 },
+        { minLevel = 271, maxLevel = 280, xpPerLevel = 36000 },
+        { minLevel = 281, maxLevel = 290, xpPerLevel = 38000 },
+        { minLevel = 291, maxLevel = 300, xpPerLevel = 40000 }
     },
-
+	
     -- Adjust this based on your server's maximum allowed weapon count
     WeaponsLimit = 1,      -- Maximum weapons to craft at the time
     maxWeaponsAllowed = 5, -- Maximum weapons to collect when craft finished

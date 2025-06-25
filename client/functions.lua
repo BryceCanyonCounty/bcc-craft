@@ -50,7 +50,7 @@ BCCCraftingMenu = FeatherMenu:RegisterMenu("bcc:crafting:mainmenu",
 -- Helper function for debugging in DevMode
 if Config.devMode then
     function devPrint(message)
-        print("^1[DEV MODE] ^4" .. message)
+       print("^1[DEV MODE]^3 " .. message .. "^0")
     end
 else
     function devPrint(message) end -- No-op if DevMode is disabled

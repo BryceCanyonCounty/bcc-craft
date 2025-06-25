@@ -26,6 +26,10 @@ local ammunitions = {
     {
         locationId = "ammunitions",
         craftbookCategory = "ammo_craftbook",
+        craftbookprice = true,
+        craftbookpricegold = 150,
+        craftbookpricemoney = 15000,
+        craftbookpricexp = 90000,
         coords = {
             vector3(410.35, -1283.62, 41.66)
         },
@@ -49,6 +53,10 @@ local ammunitions = {
                 name = "ammunition",
                 label = "Ammunition",
                 craftBookItem = "",
+                craftbookprice = true,
+                craftbookpricegold = 75,
+                craftbookpricemoney = 9000,
+                craftbookpricexp = 60000,
                 campfireModel = "p_campfire03x",
                 setupAnimDict = "mini_games@story@beechers@build_floor@john",
                 setupAnimName = "hammer_loop_good",

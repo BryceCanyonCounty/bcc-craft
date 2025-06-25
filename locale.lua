@@ -9,7 +9,7 @@ function _(str, ...) -- Translate string
     end
 
     local lang = Config.defaultlang
-    local defaultLang = "en" -- Set your fallback language here (e.g., 'en')
+    local defaultLang = "en_lang" -- Set your fallback language here (e.g., 'en')
 
     if Locales[lang] ~= nil then
         if Locales[lang][str] ~= nil then
