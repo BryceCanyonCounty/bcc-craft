@@ -41,6 +41,27 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 	else
 		devPrint("No job requirements for: " .. item.itemLabel)
 	end
+		
+	-- Check Needed Item
+	if item.neededItems and #item.neededItems > 0 then
+		devPrint("CheckingNeededItem: " .. item.itemLabel)
+		local hasNeededItems = true
+		for _, neededItem in pairs(item.neededItems) do
+			local neededItemCount = exports.vorp_inventory:getItemCount(source, nil, neededItem.itemName)
+			devPrint(_U("PlayerHas") .. neededItemCount .. _U("Of") .. neededItem.itemLabel .. _U("Requires") .. 1 .. ")")
+	
+			if neededItemCount < 1 then
+				hasNeededItems = false
+				devPrint(_U("MissingItem") .. neededItem.itemLabel)
+				VORPcore.NotifyRightTip(source, _U("MissingNeededItem") .. neededItem.itemLabel .. ".", 4000)
+				break
+			end
+		end
+		if not hasNeededItems then
+			cb(false)
+			return
+		end
+	end
 
 	-- Check if player has required items
 	local hasItems = true
