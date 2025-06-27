@@ -49,6 +49,9 @@ local weapons = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 15,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "knivehandle", itemLabel = "Knife Handle", itemCount = 1, removeItem = true },
                             { itemName = "ironbar", itemLabel = "Iron Ingot", itemCount = 1, removeItem = true },
@@ -66,6 +69,9 @@ local weapons = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 15,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "ironbar", itemLabel = "Iron Ingot", itemCount = 1, removeItem = true },
                             { itemName = "copperbar", itemLabel = "Copper Ingot", itemCount = 1, removeItem = true },
@@ -84,6 +90,9 @@ local weapons = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 15,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "ironbar", itemLabel = "Iron Ingot", itemCount = 2, removeItem = true },
                             { itemName = "copperbar", itemLabel = "Copper Ingot", itemCount = 2, removeItem = true },
@@ -118,6 +127,9 @@ local weapons = {
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 15,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "revolverbarrel", itemLabel = "Revolver Barrel", itemCount = 1, removeItem = true },
                             { itemName = "revolvercylinder", itemLabel = "Revolver Cylinder", itemCount = 1, removeItem = true },
@@ -136,6 +148,9 @@ local weapons = {
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 15,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "revolverbarrel", itemLabel = "Revolver Barrel", itemCount = 1, removeItem = true },
                             { itemName = "revolvercylinder", itemLabel = "Revolver Cylinder", itemCount = 1, removeItem = true },
@@ -154,6 +169,9 @@ local weapons = {
                         requiredLevel = 3,
                         itemAmount = 1,
                         duration = 15,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "revolverbarrel", itemLabel = "Revolver Barrel", itemCount = 1, removeItem = true },
                             { itemName = "revolvercylinder", itemLabel = "Revolver Cylinder", itemCount = 1, removeItem = true },
@@ -172,6 +190,9 @@ local weapons = {
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 15,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "revolverbarrel", itemLabel = "Revolver Barrel", itemCount = 1, removeItem = true },
                             { itemName = "revolvercylinder", itemLabel = "Revolver Cylinder", itemCount = 1, removeItem = true },
