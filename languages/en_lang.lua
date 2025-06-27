@@ -100,4 +100,6 @@ Locales["en_lang"] = {
     craftbookDiscordMoney = "**Money Spent:** %d",
     craftbookDiscordXP = "**XP:** %d",
     craftbookDiscordFree = "**Received for free**",
+    --- New Needed Items
+    MissingNeededItem = "Missing Tool-Item: ",
 }
