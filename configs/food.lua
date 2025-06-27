@@ -58,6 +58,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "meat", itemLabel = "Meat", itemCount = 1, removeItem = true },
                             { itemName = "egg", itemLabel = "Egg", itemCount = 1, removeItem = true },
@@ -73,6 +76,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "meat", itemLabel = "Meat", itemCount = 1, removeItem = true },
                         },
@@ -87,6 +93,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "biggame", itemLabel = "Big Game Meat", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
@@ -102,6 +111,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "game", itemLabel = "Game Meat", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
@@ -117,6 +129,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "venison", itemLabel = "Venison", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
@@ -132,6 +147,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "Mutton", itemLabel = "Mutton", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
@@ -147,6 +165,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "pork", itemLabel = "Pork", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
@@ -162,6 +183,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "bird", itemLabel = "Bird Meat", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
@@ -177,6 +201,9 @@ local food = {
                         requiredLevel = 1,
                         itemAmount = 1,
                         duration = 10,
+			neededItems = {     -- or false
+                            { itemName = "pan", itemLabel = "Pan" },
+                        },
                         requiredItems = {
                             { itemName = "fish", itemLabel = "Fish", itemCount = 1, removeItem = true },
                             { itemName = "salt", itemLabel = "Salt", itemCount = 1, removeItem = true },
