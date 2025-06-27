@@ -52,7 +52,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 	
 			if neededItemCount < 1 then
 				hasNeededItems = false
-				devPrint(_U("MissingItem") .. neededItem.itemLabel)
+				devPrint(_U("MissingNeededItem") .. neededItem.itemLabel)
 				VORPcore.NotifyRightTip(source, _U("MissingNeededItem") .. neededItem.itemLabel .. ".", 4000)
 				break
 			end
