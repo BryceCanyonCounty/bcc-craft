@@ -72,6 +72,9 @@ local ammunitions = {
                         itemAmount = 2,
                         duration = 120,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "lockpickmold", itemLabel = "Lockpick Mold", itemCount = 1, removeItem = false },
                             { itemName = "ironbar", itemLabel = "Iron Ingot", itemCount = 1, removeItem = true },
@@ -88,6 +91,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -105,6 +111,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -122,6 +131,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 15,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -139,6 +151,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -156,6 +171,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -173,6 +191,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 15,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -190,6 +211,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -207,6 +231,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 15,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -224,6 +251,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -241,6 +271,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -258,6 +291,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 15,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -275,6 +311,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -292,6 +331,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 20,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -309,6 +351,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 15,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
@@ -326,6 +371,9 @@ local ammunitions = {
                         itemAmount = 1,
                         duration = 15,
                         lucky = 100,
+                        neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "bulletscase", itemLabel = "Bullet Casings", itemCount = 10, removeItem = true },
                             { itemName = "bulletsmould", itemLabel = "Bullet Mold", itemCount = 1, removeItem = false },
