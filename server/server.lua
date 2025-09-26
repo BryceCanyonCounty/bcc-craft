@@ -16,6 +16,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 
 	local playerId = Character.charIdentifier
 	local playerJob = Character.job
+	local playerJobGrade = tonumber(Character.jobGrade or 0)
 	local inputAmount = item.itemAmount
 	local itemConfigAmount = getConfigItemAmount(item.itemName) * inputAmount
 
@@ -23,25 +24,34 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 	if item.requiredJobs and #item.requiredJobs > 0 then
 		devPrint("Checking job requirements for: " .. item.itemLabel)
 		local hasValidJob = false
-		for _, allowedJob in pairs(item.requiredJobs) do
-			devPrint("Allowed job: " .. allowedJob)
-			if playerJob == allowedJob then
+		for _, allowed in pairs(item.requiredJobs) do
+			local requiredJob
+			local requiredGrade = 0
+			if type(allowed) == "table" then
+				requiredJob = allowed[1] or allowed.job or allowed.name
+				requiredGrade = tonumber(allowed[2] or allowed.grade or allowed.rank or 0)
+			else
+				requiredJob = allowed
+				requiredGrade = 0
+			end
+			devPrint(string.format("Allowed job: %s (grade >= %s)", tostring(requiredJob), tostring(requiredGrade)))
+			if playerJob == requiredJob and playerJobGrade >= requiredGrade then
 				hasValidJob = true
-				devPrint("Player meets the job requirements for: " .. allowedJob)
+				devPrint(string.format("Player meets job requirements for %s with grade %s", tostring(requiredJob), tostring(requiredGrade)))
 				break
 			end
 		end
 
 		if not hasValidJob then
 			devPrint("Player does not meet the job requirements for: " .. item.itemLabel)
-			VORPcore.NotifyObjective(source, _U("InvalidJobForCrafting") .. item.itemLabel, 4000)
+			NotifyClient(source, _U("InvalidJobForCrafting") .. item.itemLabel, 5000, "error")
 			cb(false)
 			return
 		end
 	else
 		devPrint("No job requirements for: " .. item.itemLabel)
 	end
-		
+	
 	-- Check Needed Item
 	if item.neededItems and #item.neededItems > 0 then
 		devPrint("CheckingNeededItem: " .. item.itemLabel)
@@ -79,7 +89,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 	end
 
 	if not hasItems then
-		VORPcore.NotifyRightTip(source, _U("MissingMaterials") .. item.itemLabel .. ".", 4000)
+	NotifyClient(source, _U("MissingMaterials") .. item.itemLabel .. ".", 4000, "error")
 		cb(false)
 		return
 	end
@@ -96,7 +106,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 		local requiredMinutes = item.requiredPlaytimeMinutes
 		if playtime and playtime < requiredMinutes then
 			local requiredHours = math.floor(requiredMinutes / 60)
-			VORPcore.NotifyRightTip(source, "You need at least " .. requiredHours .. " hours of playtime (" .. requiredMinutes .. " minutes) to craft this item.", 5000)
+			NotifyClient(source, "You need at least " .. requiredHours .. " hours of playtime (" .. requiredMinutes .. " minutes) to craft this item.", 5000, "error")
 			devPrint("[Crafting] Player has insufficient playtime (" .. playtime .. " < " .. requiredMinutes .. ")")
 			cb(false)
 			return
@@ -106,7 +116,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 	-- Check player's crafting level
 	GetPlayerCraftingData(playerId, function(xp, level)
 		if level < item.requiredLevel then
-			VORPcore.NotifyRightTip(source, _U("RequiredLevel") .. item.requiredLevel .. ".", 4000)
+			NotifyClient(source, _U("RequiredLevel") .. item.requiredLevel .. ".", 4000, "error")
 			cb(false)
 			return
 		end
@@ -132,7 +142,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 				.. tostring(itemConfigAmount)
 			)
 			if itemLimit and itemConfigAmount > itemLimit then
-				VORPcore.NotifyRightTip(source, _U("CannotCraftOverLimit") .. item.itemLabel, 4000)
+				NotifyClient(source, _U("CannotCraftOverLimit") .. item.itemLabel, 4000, "error")
 				cb(false)
 				return
 			end
@@ -159,7 +169,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 						.. " | Required: "
 						.. tostring(requiredItemCount)
 					)
-					VORPcore.NotifyRightTip(source, _U("RemoveItemFailed", reqItem.itemLabel), 4000)
+					NotifyClient(source, _U("RemoveItemFailed", reqItem.itemLabel), 4000, "error")
 					cb(false)
 					return
 				else
@@ -179,7 +189,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 				local item = exports.vorp_inventory:getItem(source, reqItem.itemName)
 				if not item then
 					devPrint("[ERROR] Item not found in inventory: " .. tostring(reqItem.itemName))
-					VORPcore.NotifyRightTip(source, "Item not found: " .. reqItem.itemLabel, 4000)
+					NotifyClient(source, "Item not found: " .. reqItem.itemLabel, 4000, "error")
 					cb(false)
 					return
 				end
@@ -221,7 +231,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 					if currentDurability <= useDurability then
 						-- Remove item if durability is depleted
 						exports.vorp_inventory:subItemID(source, item.id)
-						VORPcore.NotifyRightTip(source, "Your crafting tool has broken", 4000)
+						NotifyClient(source, "Your crafting tool has broken", 4000, "error")
 						devPrint("[DEBUG] Item broken and removed: " .. tostring(reqItem.itemName))
 					else
 						-- Update durability metadata
@@ -289,7 +299,7 @@ BccUtils.RPC:Register("bcc-crafting:AttemptCraft", function(params, cb, source)
 					)
 					cb(true)
 				else
-					VORPcore.NotifyRightTip(source, _U("CraftingAttemptFailed"), 4000)
+				NotifyClient(source, _U("CraftingAttemptFailed"), 4000, "error")
 					cb(false)
 				end
 			end
@@ -311,19 +321,29 @@ BccUtils.RPC:Register("bcc-crafting:CanCraft", function(params, cb, source)
 	end
 
 	local playerJob = Character.job
+	local playerJobGrade = tonumber(Character.jobGrade or 0)
 	local inputAmount = item.itemAmount
 
 	-- Job check
 	if item.requiredJobs and #item.requiredJobs > 0 then
 		local valid = false
-		for _, job in ipairs(item.requiredJobs) do
-			if playerJob == job then
+		for _, allowed in ipairs(item.requiredJobs) do
+			local requiredJob
+			local requiredGrade = 0
+			if type(allowed) == "table" then
+				requiredJob = allowed[1] or allowed.job or allowed.name
+				requiredGrade = tonumber(allowed[2] or allowed.grade or allowed.rank or 0)
+			else
+				requiredJob = allowed
+				requiredGrade = 0
+			end
+			if requiredJob and playerJob == requiredJob and playerJobGrade >= requiredGrade then
 				valid = true
 				break
 			end
 		end
 		if not valid then
-			VORPcore.NotifyRightTip(source, _U("InvalidJobForCrafting") .. item.itemLabel, 4000)
+	NotifyClient(source, _U("InvalidJobForCrafting") .. item.itemLabel, 4000, "error")
 			return cb(false)
 		end
 	end
@@ -334,7 +354,7 @@ BccUtils.RPC:Register("bcc-crafting:CanCraft", function(params, cb, source)
 		local has = exports.vorp_inventory:getItemCount(source, nil, reqItem.itemName)
 
 		if has < required then
-			VORPcore.NotifyRightTip(source, _U("MissingItem") .. (reqItem.itemLabel or reqItem.itemName), 4000)
+	NotifyClient(source, _U("MissingItem") .. (reqItem.itemLabel or reqItem.itemName), 4000, "error")
 			return cb(false)
 		end
 	end
@@ -342,7 +362,7 @@ BccUtils.RPC:Register("bcc-crafting:CanCraft", function(params, cb, source)
 	-- Level check
 	GetPlayerCraftingData(Character.charIdentifier, function(xp, level)
 		if level < item.requiredLevel then
-			VORPcore.NotifyRightTip(source, _U("RequiredLevel") .. item.requiredLevel, 4000)
+		NotifyClient(source, _U("RequiredLevel") .. item.requiredLevel, 4000, "error")
 			return cb(false)
 		end
 		cb(true) -- Passed all checks
@@ -425,7 +445,7 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 
 		-- If itemLocation is NULL or "unknown", allow collection from anywhere
 		if itemLocation ~= nil and itemLocation ~= "unknown" and itemLocation ~= playerLocation then
-			VORPcore.NotifyRightTip(source, _U("WrongCollectionLocation"), 4000)
+		NotifyClient(source, _U("WrongCollectionLocation"), 4000, "error")
 			cb(false)
 			return
 		end
@@ -453,7 +473,7 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 			local currentWeaponCount = #weapons
 
 			if currentWeaponCount >= Config.maxWeaponsAllowed then
-				VORPcore.NotifyRightTip(source, _U("CannotCarryMoreWeapons"), 4000)
+				NotifyClient(source, _U("CannotCarryMoreWeapons"), 4000, "error")
 				cb(false)
 				return
 			end
@@ -462,7 +482,7 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 			local weaponAdded = exports.vorp_inventory:createWeapon(source, itemName, {})
 			if weaponAdded then
 				MySQL.execute("DELETE FROM bcc_crafting_log WHERE id = @id", { ["@id"] = craftingLog.id })
-				VORPcore.NotifyRightTip(source, _U("CollectedWeapon") .. itemLabel, 4000)
+				NotifyClient(source, _U("CollectedWeapon") .. itemLabel, 4000, "success")
 
 				-- Award XP for crafting a weapon
 				local totalXP = rewardXP
@@ -488,7 +508,7 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 				Discord:sendMessage(discordMessage)
 				cb(true)
 			else
-				VORPcore.NotifyRightTip(source, _U("FailedToAddWeapon"), 4000)
+				NotifyClient(source, _U("FailedToAddWeapon"), 4000, "error")
 				cb(false)
 			end
 		end)
@@ -499,7 +519,7 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 		devPrint("[ERROR] Item name: " .. itemName)
 		if not itemData then
 			devPrint("[ERROR] Item data not found: " .. itemName)
-			VORPcore.NotifyRightTip(source, "Item data not found for item: " .. itemLabel, 4000)
+	NotifyClient(source, "Item data not found for item: " .. itemLabel, 4000, "error")
 			cb(false)
 			return
 		end
@@ -523,18 +543,20 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 					["@id"] = craftingLog.id,
 				})
 				devPrint("[DEBUG] Updated crafting log with remaining amount: " .. remainingAmount)
-				VORPcore.NotifyRightTip(
+				NotifyClient(
 					source,
 					_U("CollectedPartially") .. addableAmount .. "x " .. itemLabel .. ".",
-					4000
+					4000,
+					"success"
 				)
 			else
 				MySQL.execute("DELETE FROM bcc_crafting_log WHERE id = @id", { ["@id"] = craftingLog.id })
 				devPrint("[DEBUG] Crafting log entry deleted for item: " .. itemName)
-				VORPcore.NotifyRightTip(
+				NotifyClient(
 					source,
 					_U("CollectedCraftedItem") .. addableAmount .. "x " .. itemLabel .. ".",
-					4000
+					4000,
+					"success"
 				)
 			end
 
@@ -591,18 +613,20 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 						["@id"] = craftingLog.id,
 					})
 					devPrint("[DEBUG] Updated crafting log with remaining amount: " .. remainingAmount)
-					VORPcore.NotifyRightTip(
+					NotifyClient(
 						source,
 						_U("CollectedPartially") .. partialAmount .. "x " .. itemLabel .. ".",
-						4000
+						4000,
+						"success"
 					)
 				else
 					MySQL.execute("DELETE FROM bcc_crafting_log WHERE id = @id", { ["@id"] = craftingLog.id })
 					devPrint("[DEBUG] Crafting log entry deleted for item: " .. itemName)
-					VORPcore.NotifyRightTip(
+					NotifyClient(
 						source,
 						_U("CollectedCraftedItem") .. partialAmount .. "x " .. itemLabel .. ".",
-						4000
+						4000,
+						"success"
 					)
 				end
 
@@ -633,7 +657,7 @@ BccUtils.RPC:Register("bcc-crafting:collectCraftedItem", function(params, cb, so
 				cb(true)
 			else
 				-- No space available even for a partial amount
-				VORPcore.NotifyRightTip(source, _U("NotEnoughSpace") .. amountToAdd .. "x " .. itemLabel .. ".", 4000)
+				NotifyClient(source, _U("NotEnoughSpace") .. amountToAdd .. "x " .. itemLabel .. ".", 4000, "error")
 				cb(false)
 			end
 		end
@@ -1030,7 +1054,7 @@ BccUtils.RPC:Register("bcc-crafting:giveBook", function(data, cb, source)
 	end
 
     if priceEnabled and (not goldCost or not moneyCost or not requiredXP) then
-        VORPcore.NotifyRightTip(source, _U("priceForCraftBookNotSet"), 5000)
+        NotifyClient(source, _U("priceForCraftBookNotSet"), 5000, "error")
         if cb then cb(false) end
         return
     end
@@ -1054,13 +1078,13 @@ BccUtils.RPC:Register("bcc-crafting:giveBook", function(data, cb, source)
 		local level = math.floor(xp / 1000)
 		local requiredLevel = math.floor(requiredXP / 1000)
         if xp < requiredXP then
-            VORPcore.NotifyRightTip(source, _U("notEnoughXpForBook", requiredLevel), 5000)
+		NotifyClient(source, _U("notEnoughXpForBook", requiredLevel), 5000, "error")
             if cb then cb(false) end
             return
         end
 
         if money < moneyCost or gold < goldCost then
-            VORPcore.NotifyRightTip(source, _U("notEnoughMoneyGoldForBook", moneyCost, goldCost, itemLabel), 5000)
+		NotifyClient(source, _U("notEnoughMoneyGoldForBook", moneyCost, goldCost, itemLabel), 5000, "error")
             if cb then cb(false) end
             return
         end
@@ -1073,7 +1097,7 @@ BccUtils.RPC:Register("bcc-crafting:giveBook", function(data, cb, source)
     local canCarry = exports.vorp_inventory:canCarryItem(source, itemName, amount, nil)
 
     if not (canCarry and canCarryItems) then
-        VORPcore.NotifyRightTip(source, _U("notEnoughSpaceForBook", itemLabel), 4000)
+        NotifyClient(source, _U("notEnoughSpaceForBook", itemLabel), 4000, "error")
         if cb then cb(false) end
         return
     end
@@ -1081,9 +1105,9 @@ BccUtils.RPC:Register("bcc-crafting:giveBook", function(data, cb, source)
     exports.vorp_inventory:addItem(source, itemName, amount, nil, nil)
 
     if priceEnabled then
-        VORPcore.NotifyRightTip(source, _U("receivedBookPaid", amount, itemLabel, moneyCost, goldCost), 5000)
+	NotifyClient(source, _U("receivedBookPaid", amount, itemLabel, moneyCost, goldCost), 5000, "success")
     else
-        VORPcore.NotifyRightTip(source, _U("receivedBookFree", amount, itemLabel), 5000)
+	NotifyClient(source, _U("receivedBookFree", amount, itemLabel), 5000, "success")
     end
 
     local message = _U("craftbookDiscordTitle") .. "\n\n"

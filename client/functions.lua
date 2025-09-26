@@ -56,6 +56,59 @@ else
     function devPrint(message) end -- No-op if DevMode is disabled
 end
 
+function Notify(message, typeOrDuration, maybeDuration, overrides)
+    overrides = overrides or {}
+    local opts = Config.NotifyOptions or {}
+
+    local notifyType = opts.type or "info"
+    local notifyDuration = opts.autoClose or 4000
+
+    if type(typeOrDuration) == "string" then
+        notifyType = typeOrDuration
+        notifyDuration = tonumber(maybeDuration) or notifyDuration
+    elseif type(typeOrDuration) == "number" then
+        notifyDuration = typeOrDuration
+    end
+
+    local notifyPosition = overrides.position or opts.position or "bottom-center"
+    local notifyTransition = overrides.transition or opts.transition or "slide"
+    local notifyIcon = overrides.icon
+    if notifyIcon == nil then notifyIcon = opts.icon end
+    local hideProgressBar = overrides.hideProgressBar
+    if hideProgressBar == nil then hideProgressBar = opts.hideProgressBar end
+    local rtl = overrides.rtl
+    if rtl == nil then rtl = opts.rtl end
+
+    if Config.Notify == "feather-menu" then
+        FeatherMenu:Notify({
+            message = message,
+            type = notifyType,
+            autoClose = notifyDuration,
+            position = notifyPosition,
+            transition = notifyTransition,
+            icon = notifyIcon,
+            hideProgressBar = hideProgressBar,
+            rtl = rtl or false,
+            style = overrides.style or opts.style or {},
+            toastStyle = overrides.toastStyle or opts.toastStyle or {},
+            progressStyle = overrides.progressStyle or opts.progressStyle or {}
+        })
+    elseif Config.Notify == "vorp-core" then
+        VORPcore.NotifyRightTip(message, notifyDuration)
+    else
+        print("^1[Notify] Invalid Config.Notify: " .. tostring(Config.Notify))
+    end
+end
+
+BccUtils.RPC:Register("bcc-crafting:NotifyClient", function(data)
+    if not data or not data.message then return end
+
+    local notifyType = data.type
+    local duration = tonumber(data.duration)
+
+    Notify(data.message, notifyType, duration)
+end)
+
 -- Handle player death and close menu
 function HandlePlayerDeathAndCloseMenu()
     local playerPed = PlayerPedId()
@@ -104,24 +157,12 @@ function attemptCraftItem(item, amount)
                 isCrafting = false
                 ClearPedTasks(ped)
                 SetNuiFocus(false, false)
-                FeatherMenu:Notify({
-                    message = _U("CraftingCanceled"),
-                    type = "error",
-                    autoClose = 4000,
-                    position = "bottom-center",
-                    icon = false,
-                    hideProgressBar = false,
-                    rtl = false,
-                    transition = "slide",
-                    style = {},
-                    toastStyle = {},
-                    progressStyle = {}
-                })
+                Notify(_U("CraftingCanceled"), "error", 4000)
                 TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
             end)
 
             progressbar.start(
-                _U("craftingItem") .. item.itemLabel .. " x" .. item.itemAmount ..". ESC pentru a anula",
+                _U("craftingItem") .. item.itemLabel .. " x" .. amount ..". ESC pentru a anula",
                 durationMs,
                 function()
                     if not isCrafting then return end
@@ -131,33 +172,9 @@ function attemptCraftItem(item, amount)
                     -- Now do the real crafting
                     BccUtils.RPC:Call("bcc-crafting:AttemptCraft", { item = item, locationId = currentCraftingLocationId }, function(success, err)
                         if success then
-                            FeatherMenu:Notify({
-                                message = _U("CraftingComplete"),
-                                type = "success",
-                                autoClose = 4000,
-                                position = "bottom-center",
-                                icon = false,
-                                hideProgressBar = false,
-                                rtl = false,
-                                transition = "slide",
-                                style = {},
-                                toastStyle = {},
-                                progressStyle = {}
-                            })
+                            Notify(_U("CraftingComplete"), "success", 4000)
                         else
-                            FeatherMenu:Notify({
-                                message = _U("CraftingFailed"),
-                                type = "error",
-                                autoClose = 4000,
-                                position = "bottom-center",
-                                icon = false,
-                                hideProgressBar = false,
-                                rtl = false,
-                                transition = "slide",
-                                style = {},
-                                toastStyle = {},
-                                progressStyle = {}
-                            })
+                            Notify(_U("CraftingFailed"), "error", 4000)
                         end
                         TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
                     end)
@@ -175,33 +192,9 @@ function attemptCraftItem(item, amount)
             -- No animation, do crafting immediately
             BccUtils.RPC:Call("bcc-crafting:AttemptCraft", { item = item, locationId = currentCraftingLocationId }, function(success, err)
                 if success then
-                    FeatherMenu:Notify({
-                        message = "Crafting started successfully for " .. item.itemLabel,
-                        type = "success",
-                        autoClose = 4000,
-                        position = "bottom-center",
-                        icon = false,
-                        hideProgressBar = false,
-                        rtl = false,
-                        transition = "slide",
-                        style = {},
-                        toastStyle = {},
-                        progressStyle = {}
-                    })
+                    Notify("Crafting started successfully for " .. item.itemLabel, "success", 4000)
                 else
-                    FeatherMenu:Notify({
-                        message = "Failed to start crafting",
-                        type = "error",
-                        autoClose = 4000,
-                        position = "bottom-center",
-                        icon = false,
-                        hideProgressBar = false,
-                        rtl = false,
-                        transition = "slide",
-                        style = {},
-                        toastStyle = {},
-                        progressStyle = {}
-                    })  
+                    Notify("Failed to start crafting", "error", 4000)
                 end
                 TriggerEvent('bcc-crafting:openmenu', currentLocationCategories)
             end)
@@ -305,19 +298,7 @@ end
 RegisterNetEvent('bcc-crafting:levelUp')
 AddEventHandler('bcc-crafting:levelUp', function(newLevel)
     devPrint("Player leveled up! New crafting level: " .. newLevel)
-    FeatherMenu:Notify({
-        message = "Congratulations! You have reached crafting level " .. newLevel,
-        type = "success",
-        autoClose = 4000,
-        position = "bottom-center",
-        icon = false,
-        hideProgressBar = false,
-        rtl = false,
-        transition = "slide",
-        style = {},
-        toastStyle = {},
-        progressStyle = {}
-    })
+    Notify("Congratulations! You have reached crafting level " .. newLevel, "success", 4000)
 end)
 
 function PlayAnim(dict, anim, duration)

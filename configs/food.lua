@@ -53,7 +53,12 @@ local food = {
                     {
                         itemName = "consumable_breakfast",
                         itemLabel = "Breakfast",
-						requiredJobs = {"chef", "doctor"},
+						requiredJobs = false,
+                        --or you can use 
+                        --[[requiredJobs = {
+                            {"chef", 0},
+                            {"doctor", 0},
+                        }, -- { jobName, minimumGrade }]]--
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -71,7 +76,12 @@ local food = {
                     {
                         itemName = "steak",
                         itemLabel = "Grilled Meat",
-						requiredJobs = {"chef", "doctor"}, ---or false
+						requiredJobs = false,
+                        --or you can use 
+                        --[[requiredJobs = {
+                            {"chef", 0},
+                            {"doctor", 0},
+                        }, -- { jobName, minimumGrade }]]--
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -88,7 +98,7 @@ local food = {
                     {
                         itemName = "cooked_biggame",
                         itemLabel = "Salted Big Game Dish",
-						requiredJobs = {"chef", "doctor"},
+						requiredJobs = false,
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -106,7 +116,7 @@ local food = {
                     {
                         itemName = "cooked_game",
                         itemLabel = "Salted Game Dish",
-						requiredJobs = {"chef", "doctor"},
+						requiredJobs = false,
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -124,7 +134,7 @@ local food = {
                     {
                         itemName = "cooked_venison",
                         itemLabel = "Venison Dish",
-						requiredJobs = {"chef", "doctor"},
+						requiredJobs = false,
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -142,7 +152,7 @@ local food = {
                     {
                         itemName = "cooked_mutton",
                         itemLabel = "Mutton Dish",
-						requiredJobs = {"chef", "doctor"},
+						requiredJobs = false,
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -160,7 +170,7 @@ local food = {
                     {
                         itemName = "cooked_pork",
                         itemLabel = "Pork Dish",
-						requiredJobs = {"chef", "doctor"},
+						requiredJobs = false,
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -178,7 +188,7 @@ local food = {
                     {
                         itemName = "cooked_bird",
                         itemLabel = "Bird Meat Dish",
-						requiredJobs = {"chef", "doctor"},
+						requiredJobs = false,
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,
@@ -196,7 +206,7 @@ local food = {
                     {
                         itemName = "consumable_bluegil",
                         itemLabel = "Fish Dish",
-						requiredJobs = {"chef", "doctor"},
+						requiredJobs = false,
                         rewardXP = 1,
                         requiredLevel = 1,
                         itemAmount = 1,

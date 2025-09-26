@@ -101,5 +101,6 @@ Locales["de_lang"] = {
     craftbookDiscordXP = "**XP:** %d",
     craftbookDiscordFree = "**Kostenlos erhalten**",
     --- Neue benötigte Gegenstände
+    NeededItem = "Benötigte Werkzeuge",
     MissingNeededItem = "Fehlendes Werkzeug: ",
 }
