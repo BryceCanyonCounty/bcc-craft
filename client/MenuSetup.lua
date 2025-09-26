@@ -26,38 +26,43 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
 
 	local imgPath = "nui://vorp_inventory/html/img/items/" .. item.itemName .. ".png"
 
-	local requiredItemsHTML = ""
-	for _, reqItem in ipairs(item.requiredItems) do
+	local requiredItemsImageBoxes = {}
+	for index, reqItem in ipairs(item.requiredItems) do
 		local reqImgPath = "nui://vorp_inventory/html/img/items/" .. reqItem.itemName .. ".png"
-		local label = reqItem.itemLabel
-		local count = tonumber(reqItem.itemCount)
+		local label = reqItem.itemLabel or reqItem.itemName or "?"
+		local count = tonumber(reqItem.itemCount) or 0
 
-		requiredItemsHTML = requiredItemsHTML
-			..
-			'<div style="display: flex; flex-direction: column; align-items: center; width: 90px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">'
-			.. '<img src="'
-			.. reqImgPath
-			.. '" style="width: 48px; height: 48px; margin-bottom: 6px;" alt="'
-			.. label
-			.. '">'
-			.. '<span style="text-align: center; font-size: 14px;">'
-			.. label
-			.. "</span>"
-			.. '<span style="font-size: 13px; color: #666;">x'
-			.. count
-			.. "</span>"
-			.. "</div>"
+		table.insert(requiredItemsImageBoxes, {
+			type = "imagebox",
+			index = index,
+			data = {
+				img = reqImgPath,
+				label = "x" .. count,
+				tooltip = label,
+				style = { margin = "6px" },
+				disabled = false,
+			},
+		})
 	end
 
-	local requiredJobsHTML = ""
+	local requiredJobsHTML = "N/A"
 	if item.requiredJobs and #item.requiredJobs > 0 then
+		local jobParts = {}
 		for _, job in ipairs(item.requiredJobs) do
-			requiredJobsHTML = requiredJobsHTML .. job
+			if type(job) == "table" then
+				local jobName = job[1] or job.job or job.name or "?"
+				local jobGrade = job[2] or job.grade or job.rank
+				if jobGrade and tonumber(jobGrade) and tonumber(jobGrade) > 0 then
+					table.insert(jobParts, string.format("%s (≥ %s)", jobName, jobGrade))
+				else
+					table.insert(jobParts, jobName)
+				end
+			else
+				table.insert(jobParts, tostring(job))
+			end
 		end
-	else
-		requiredJobsHTML = "N/A"
+		requiredJobsHTML = table.concat(jobParts, ", ")
 	end
-
 	local neededToolHTML = ""
 	if item.neededItems and #item.neededItems > 0 then
 		for _, neededItem in ipairs(item.neededItems) do
@@ -67,64 +72,41 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
 		neededToolHTML = "N/A"
 	end
 
-	local htmlContent = [[
-	<div style="margin: auto; padding: 30px 30px 30px 30px;">
-
-		<!-- Header: Image + Item Info Table -->
-		<div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px;">
-			<div style="flex-shrink: 0;">
-				<img src="]] ..
-		imgPath ..
-		[[" alt="]] ..
-		item.itemLabel .. [[" style="width: 100px; height: 100px; border: 1px solid #bbb; border-radius: 6px;">
-			</div>
-
-			<table style="flex-grow: 1; width: 100%; border-collapse: collapse; font-size: 16px;">
-				<tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 6px 10px;">]] .. _U("RequiredLevel") .. [[</td>
-                    <td style="padding: 6px 10px; color: #2a9d8f;">]] .. (tonumber(item.requiredLevel)) .. [[</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 6px 10px;">]] .. _U("CraftTimeRemains") .. [[</td>
-                    <td style="padding: 6px 10px; color: #e76f51;">]] ..
-		(tonumber(item.duration)) .. " " .. _U("seconds") .. [[</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 6px 10px;">]] .. _U("RewardXp") .. [[</td>
-                    <td style="padding: 6px 10px; color: #f4a261;">]] .. (tonumber(item.rewardXP)) .. [[ XP</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 6px 10px;">]] .. _U("CraftingLimit") .. [[</td>
-                    <td style="padding: 6px 10px; color: #6c757d;">]] .. (itemLimit or "N/A") .. [[</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 6px 10px;">]] .. _U("CraftAmount") .. [[</td>
-                    <td style="padding: 6px 10px; color: #264653;">]] .. (tonumber(item.itemAmount)) .. [[</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 6px 10px;">]] .. _U("RequiredJobs") .. [[</td>
-                    <td style="padding: 6px 10px; color: #6c5ce7;">]] .. requiredJobsHTML .. [[</td>
-                </tr>
-		<tr>
-                    <td style="padding: 6px 10px;">]] .. _U("NeededItem") .. [[</td>
-                    <td style="padding: 6px 10px; color: #6c5ce7;">]] .. neededToolHTML .. [[</td>
-                </tr>
-			</table>
-		</div>
-
-		<hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;">
-
-		<!-- Required Items Grid -->
-		<div>
-			<h4 style="margin-bottom: 10px; font-size: 18px; font-weight: bold;">]] .. _U("RequiredItems") .. [[</h4>
-			<div style="display: flex; flex-wrap: wrap; gap: 12px;">
-				]] .. requiredItemsHTML .. [[
-			</div>
-		</div>
+	local headerHtml = [[
+	<div style="margin: auto; padding: 0 30px;">
+		<table style="flex-grow: 1; width: 100%; border-collapse: collapse; font-size: 16px;">
+			<tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 6px 10px;">]] .. _U("RequiredLevel") .. [[</td>
+                <td style="padding: 6px 10px; color: #2a9d8f;">]] .. (tonumber(item.requiredLevel)) .. [[</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 6px 10px;">]] .. _U("CraftTimeRemains") .. [[</td>
+                <td style="padding: 6px 10px; color: #e76f51;">]] .. (tonumber(item.duration)) .. " " .. _U("seconds") .. [[</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 6px 10px;">]] .. _U("RewardXp") .. [[</td>
+                <td style="padding: 6px 10px; color: #f4a261;">]] .. (tonumber(item.rewardXP)) .. [[ XP</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 6px 10px;">]] .. _U("CraftingLimit") .. [[</td>
+                <td style="padding: 6px 10px; color: #6c757d;">]] .. (itemLimit or "N/A") .. [[</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 6px 10px;">]] .. _U("CraftAmount") .. [[</td>
+                <td style="padding: 6px 10px; color: #264653;">]] .. (tonumber(item.itemAmount)) .. [[</td>
+            </tr>
+			<tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 6px 10px;">]] .. _U("RequiredJobs") .. [[</td>
+                <td style="padding: 6px 10px; color: #6c5ce7;">]] .. requiredJobsHTML .. [[</td>
+            </tr>
+			<tr >
+            	<td style="padding: 6px 10px;">]] .. _U("NeededItem") .. [[</td>
+                <td style="padding: 6px 10px; color: #6c5ce7;">]] .. neededToolHTML .. [[</td>
+            </tr>
+		</table>
 	</div>
 ]]
 
-	-- Remaining logic unchanged...
 	local itemMenu = BCCCraftingMenu:RegisterPage("bcc-crafting:item:" .. item.itemName)
 	itemMenu:RegisterElement("header", {
 		value = item.itemLabel,
@@ -138,10 +120,35 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
 	})
 
 	itemMenu:RegisterElement("html", {
-		value = { htmlContent },
+		value = { headerHtml },
 		slot = "content",
 		style = {},
 	})
+
+	itemMenu:RegisterElement("line", {
+		style = {},
+		slot = "content"
+	})
+
+	itemMenu:RegisterElement("textdisplay", {
+		value = _U("RequiredItems"),
+		slot = "content",
+		style = {},
+	})
+
+	if #requiredItemsImageBoxes > 0 then
+		itemMenu:RegisterElement("imageboxcontainer", {
+			slot = "content",
+			items = requiredItemsImageBoxes,
+			style = {},
+		})
+	else
+		itemMenu:RegisterElement("textdisplay", {
+			value = _U("NotAvailable"),
+			slot = "content",
+			style = { fontSize = "16px", italic = true, textAlign = "center" },
+		})
+	end
 
 	itemMenu:RegisterElement("line", {
 		style = {},
@@ -196,20 +203,7 @@ function openCraftingAmountInput(item, categoryName, currentLocationCategories)
 	BccUtils.RPC:Call("bcc-crafting:GetMaxCraftAmount", { item = item }, function(maxCraftable)
 		if not maxCraftable then
 			devPrint("[ERROR] Failed to get max craftable amount.")
-			FeatherMenu:Notify({
-				message = "Cannot determine how many items you can craft.",
-				4000,
-				type = "error",
-				autoClose = 4000,
-				position = "bottom-center",
-				icon = false,
-				hideProgressBar = false,
-				rtl = false,
-				transition = "slide",
-				style = {},
-				toastStyle = {},
-				progressStyle = {}
-			})
+			Notify("Cannot determine how many items you can craft.", "error", 4000)
 			return
 		end
 
@@ -261,19 +255,11 @@ function openCraftingAmountInput(item, categoryName, currentLocationCategories)
 				attemptCraftItem(item, tonumber(inputValue))
 			else
 				devPrint("Invalid amount entered.")
-				--[[FeatherMenu:Notify({
+				--[[Notify(
 					message = _U("InvalidAmount"),
 					type = "error",
-					autoClose = 4000,
-					position = "bottom-center",
-					icon = false,
-					hideProgressBar = false,
-					rtl = false,
-					transition = "slide",
-					style = {},
-					toastStyle = {},
-					progressStyle = {}
-				})]]
+					autoClose = 4000
+				)]]
 			end
 		end)
 
@@ -309,19 +295,7 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 	devPrint("Requesting crafting data from the server")
 	local craftingData = BccUtils.RPC:CallAsync("bcc-crafting:GetCraftingData", { categories = categories })
 	if not craftingData then
-		FeatherMenu:Notify({
-			message = "Failed to retrieve crafting data from the server.",
-			type = "error",
-			autoClose = 4000,
-			position = "bottom-center",
-			icon = false,
-			hideProgressBar = false,
-			rtl = false,
-			transition = "slide",
-			style = {},
-			toastStyle = {},
-			progressStyle = {}
-		})
+		Notify("Failed to retrieve crafting data from the server.", "error", 4000)
 		devPrint("Failed to retrieve crafting data from the server.")
 		return
 	end
@@ -339,19 +313,6 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 		slot = "header",
 		style = {},
 	})
-
-	-- HTML Generator
-	local function generateHtmlContent(item, imgPath)
-		local label = item.itemLabel
-		return '<div style="display: flex; align-items: center; width: 100%;">'
-			.. '<img src="'
-			.. imgPath
-			.. '" style="width: 38px; height: 38px; margin-right: 10px;">'
-			.. '<div style="text-align: center; flex-grow: 1;">'
-			.. label
-			.. "</div>"
-			.. "</div>"
-	end
 
 	if type(categories) == "table" and #categories > 0 then
 		for _, categoryData in ipairs(categories) do
@@ -383,21 +344,56 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 				end
 
 				if matchedCategory and #matchedCategory.items > 0 then
-					for _, item in ipairs(matchedCategory.items) do
+					local imageBoxItems = {}
+					local itemLookup = {}
+
+					for index, item in ipairs(matchedCategory.items) do
 						devPrint("Adding item to menu: " .. item.itemLabel)
 						local imgPath = "nui://vorp_inventory/html/img/items/" .. item.itemName .. ".png"
-						local htmlContent = generateHtmlContent(item, imgPath)
+						itemLookup[index] = item
 
-						craftingMainMenu:RegisterElement("button", {
-							html = htmlContent,
+						table.insert(imageBoxItems, {
+							type = "imagebox",
+							index = index,
+							data = {
+								img = imgPath,
+								label = "x",
+								tooltip = item.itemLabel or item.itemName,
+								style = { margin = "5px" },
+								sound = {
+									action = "SELECT",
+									soundset = "RDRO_Character_Creator_Sounds",
+								},
+							}
+						})
+					end
+
+					if #imageBoxItems > 0 then
+						craftingMainMenu:RegisterElement("imageboxcontainer", {
 							slot = "content",
-						}, function()
-							local currentItemName = item.itemName
+							items = imageBoxItems,
+						}, function(data)
+							if not data or not data.child then
+								return
+							end
+
+							local selectedItem = itemLookup[data.child.index]
+							if not selectedItem then
+								return
+							end
+
+							local currentItemName = selectedItem.itemName
 							devPrint("Preparing to fetch limit for item:", currentItemName)
 							fetchItemLimit(currentItemName, function(itemLimit)
-								openCraftingItemMenu(item, categoryData.name, itemLimit)
+								openCraftingItemMenu(selectedItem, categoryData.name, itemLimit)
 							end)
 						end)
+					else
+						craftingMainMenu:RegisterElement("textdisplay", {
+							value = _U("NotAvailable"),
+							style = { fontSize = "16px", italic = true, marginBottom = "10px" },
+							slot = "content",
+						})
 					end
 				else
 					craftingMainMenu:RegisterElement("textdisplay", {
@@ -406,12 +402,6 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 						slot = "content",
 					})
 				end
-
-				-- Spacer line between categories
-				craftingMainMenu:RegisterElement("line", {
-					style = {},
-					slot = "content",
-				})
 			else
 				devPrint("Invalid category data: Missing 'label' or 'name'")
 			end
@@ -448,19 +438,7 @@ AddEventHandler("bcc-crafting:openmenu", function(categories)
 			if completedCraftingData then
 				TriggerEvent("bcc-crafting:sendCompletedCraftingList", completedCraftingData)
 			else
-				FeatherMenu:Notify({
-					message = _U("NoCompletedCrafting"),
-					type = "error",
-					autoClose = 4000,
-					position = "bottom-center",
-					icon = false,
-					hideProgressBar = false,
-					rtl = false,
-					transition = "slide",
-					style = {},
-					toastStyle = {},
-					progressStyle = {}
-				})
+				Notify(_U("NoCompletedCrafting"), "error", 4000)
 			end
 		end)
 	end)
@@ -914,19 +892,7 @@ function openCompletedCraftingMenu(completedCraftingList, currentLocationCategor
 							TriggerEvent("bcc-crafting:sendCompletedCraftingList", completedCraftingData)
 						else
 							devPrint("[DEBUG] No completed crafting data found.")
-							FeatherMenu:Notify({
-								message = _U("NoCompletedCrafting"),
-								type = "error",
-								autoClose = 4000,
-								position = "bottom-center",
-								icon = false,
-								hideProgressBar = false,
-								rtl = false,
-								transition = "slide",
-								style = {},
-								toastStyle = {},
-								progressStyle = {}
-							})
+							Notify(_U("NoCompletedCrafting"), "error", 4000)
 						end
 					end)
 				end)

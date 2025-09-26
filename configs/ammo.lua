@@ -66,12 +66,16 @@ local ammunitions = {
                     {
                         itemName = "lockpick",
                         itemLabel = "Lockpick",
-                        requiredJobs = false,
+                        requiredJobs = false, 
+                        --or you can use 
+                        --[[requiredJobs = {
+                            {"blackSmith", 0},
+                            {"doctor", 0},
+                        }, -- { jobName, minimumGrade }]]--
                         rewardXP = 10,
                         requiredLevel = 15,
                         itemAmount = 2,
                         duration = 120,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -86,11 +90,15 @@ local ammunitions = {
                         itemName = "ammoshotgunnormal",
                         itemLabel = "Shotgun Ammo (Regular)",
                         requiredJobs = false,
+                        --or you can use 
+                        --[[requiredJobs = {
+                            {"blackSmith", 0},
+                            {"doctor", 0},
+                        }, -- { jobName, minimumGrade }]]--
                         rewardXP = 20,
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -106,11 +114,15 @@ local ammunitions = {
                         itemName = "ammoshotgunslug",
                         itemLabel = "Shotgun Ammo (Slug)",
                         requiredJobs = false,
+                        --or you can use 
+                        --[[requiredJobs = {
+                            {"blackSmith", 0},
+                            {"doctor", 0},
+                        }, -- { jobName, minimumGrade }]]--
                         rewardXP = 60,
                         requiredLevel = 10,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -130,7 +142,6 @@ local ammunitions = {
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 15,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -150,7 +161,6 @@ local ammunitions = {
                         requiredLevel = 14,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -170,7 +180,6 @@ local ammunitions = {
                         requiredLevel = 10,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -190,7 +199,6 @@ local ammunitions = {
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 15,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -210,7 +218,6 @@ local ammunitions = {
                         requiredLevel = 14,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -230,7 +237,6 @@ local ammunitions = {
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 15,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -250,7 +256,6 @@ local ammunitions = {
                         requiredLevel = 10,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -270,7 +275,6 @@ local ammunitions = {
                         requiredLevel = 14,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -290,7 +294,6 @@ local ammunitions = {
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 15,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -310,7 +313,6 @@ local ammunitions = {
                         requiredLevel = 14,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -330,7 +332,6 @@ local ammunitions = {
                         requiredLevel = 10,
                         itemAmount = 1,
                         duration = 20,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -350,7 +351,6 @@ local ammunitions = {
                         requiredLevel = 5,
                         itemAmount = 1,
                         duration = 15,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },
@@ -370,7 +370,6 @@ local ammunitions = {
                         requiredLevel = 2,
                         itemAmount = 1,
                         duration = 15,
-                        lucky = 100,
                         neededItems = {     -- or false
                             { itemName = "hammer", itemLabel = "Hammer" },
                         },

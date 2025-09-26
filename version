@@ -1,2 +1,5 @@
-<1.3.0>
-See GitHub for updates!
+<1.4.0>
+- refactor notifications to a centralized helper and adjusted locales
+- switch crafting item entries to the Feather imagebox layout
+- support {job, grade} job requirements in configs and server validation
+- remove unused lucky fields from crafting configs

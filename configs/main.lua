@@ -5,6 +5,20 @@ Config = {
     -- Development mode toggle
     devMode = false, -- Set to false on a live server
 
+    -- Notifications
+    Notify = "feather-menu",
+    NotifyOptions = {
+        type = "info",
+        autoClose = 4000,
+        position = "bottom-center",
+        transition = "slide",
+        icon = false,
+        hideProgressBar = false,
+        style = {},
+        toastStyle = {},
+        progressStyle = {}
+    },
+
     -- Discord Webhooks
     WebhookLink = '',               --insert your webhook link here if you want webhooks
     WebhookTitle = 'BCC-Crafting',
@@ -42,7 +56,6 @@ Config = {
         { minLevel = 281, maxLevel = 290, xpPerLevel = 38000 },
         { minLevel = 291, maxLevel = 300, xpPerLevel = 40000 }
     },
-	
     -- Adjust this based on your server's maximum allowed weapon count
     WeaponsLimit = 1,      -- Maximum weapons to craft at the time
     maxWeaponsAllowed = 5, -- Maximum weapons to collect when craft finished
@@ -52,11 +65,9 @@ Config = {
     craftImageURL = "",            -- Add your desired image URL here
 
     allowGlobalCollection = false, -- true = can collect crafted items from anywhere
-	
     HasCraftBooks = false,    --This will show a button to every location so they can buy craftbook from there
 
     -- If you want to use BCC-UserLog API's
     -- Global toggle for using playtime restrictions
     useBccUserlog = false
-
 }

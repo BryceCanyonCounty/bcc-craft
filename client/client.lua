@@ -7,7 +7,7 @@ CreateThread(function()
 
     local CraftingMenuPrompt = BccUtils.Prompts:SetupPromptGroup()
 
-    local craftingprompt = CraftingMenuPrompt:RegisterPrompt(_U('PromptName'), 0x760A9C6F, 1, 1, true, 'hold', { timedeventhash = 'MEDIUM_TIMED_EVENT' })
+    local craftingprompt = CraftingMenuPrompt:RegisterPrompt(_U('PromptName'), 0x760A9C6F, 1, 1, true, 'click', nil)
 
     -- Iterate over CraftingLocations from the config
     for _, location in pairs(CraftingLocations) do
@@ -17,8 +17,7 @@ CreateThread(function()
 
                 -- Blip handling
                 if location.blip and location.blip.show then
-                    local CraftingBlip = BccUtils.Blips:SetBlip(location.blip.label, location.blip.sprite,
-                        location.blip.scale, coord.x, coord.y, coord.z)
+                    local CraftingBlip = BccUtils.Blips:SetBlip(location.blip.label, location.blip.sprite, location.blip.scale, coord.x, coord.y, coord.z)
                     local blipModifier = BccUtils.Blips:AddBlipModifier(CraftingBlip, location.blip.color)
                     blipModifier:ApplyModifier()
                     CreatedBlip[#CreatedBlip + 1] = CraftingBlip

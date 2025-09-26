@@ -101,5 +101,6 @@ Locales["ro_lang"] = {
     craftbookDiscordXP = "**Experiență:** %d",
     craftbookDiscordFree = "**Primit gratuit**",
     --- New Needed Items
-    MissingNeededItem = "Missing Tool-Item: ",
+    NeededItem = "Unelte Necesare",
+    MissingNeededItem = "Lipsă Unealtă: ",
 }
