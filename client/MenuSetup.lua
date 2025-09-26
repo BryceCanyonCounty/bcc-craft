@@ -58,6 +58,15 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
 		requiredJobsHTML = "N/A"
 	end
 
+	local neededToolHTML = ""
+	if item.neededItems and #item.neededItems > 0 then
+		for _, neededItem in ipairs(item.neededItems) do
+			neededToolHTML = neededToolHTML .. neededItem.itemLabel
+		end
+	else
+		neededToolHTML = "N/A"
+	end
+
 	local htmlContent = [[
 	<div style="margin: auto; padding: 30px 30px 30px 30px;">
 
@@ -92,11 +101,14 @@ function openCraftingItemMenu(item, categoryName, itemLimit)
                     <td style="padding: 6px 10px;">]] .. _U("CraftAmount") .. [[</td>
                     <td style="padding: 6px 10px; color: #264653;">]] .. (tonumber(item.itemAmount)) .. [[</td>
                 </tr>
-                <tr>
+                <tr style="border-bottom: 1px solid #ddd;">
                     <td style="padding: 6px 10px;">]] .. _U("RequiredJobs") .. [[</td>
                     <td style="padding: 6px 10px; color: #6c5ce7;">]] .. requiredJobsHTML .. [[</td>
                 </tr>
-
+		<tr>
+                    <td style="padding: 6px 10px;">]] .. _U("NeededItem") .. [[</td>
+                    <td style="padding: 6px 10px; color: #6c5ce7;">]] .. neededToolHTML .. [[</td>
+                </tr>
 			</table>
 		</div>
 
