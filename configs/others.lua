@@ -49,6 +49,9 @@ local others = {
                         requiredLevel = 3,
                         itemAmount = 1,
                         duration = 40,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "petroleum", itemLabel = "Crude Oil", itemCount = 10, removeItem = true },
                         },
@@ -63,6 +66,9 @@ local others = {
                         requiredLevel = 3,
                         itemAmount = 1,
                         duration = 40,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "petroleum", itemLabel = "Crude Oil", itemCount = 10, removeItem = true },
                         },
@@ -121,6 +127,9 @@ local others = {
                         requiredLevel = 5,
                         itemAmount = 3,
                         duration = 30,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "tobacco_leafs", itemLabel = "Tobacco Leaves", itemCount = 1, removeItem = true }
                         },
@@ -135,6 +144,9 @@ local others = {
                         requiredLevel = 10,
                         itemAmount = 1,
                         duration = 40,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "tobaccopipe", itemLabel = "Dried Tobacco", itemCount = 3, removeItem = true }
                         },
@@ -149,6 +161,9 @@ local others = {
                         requiredLevel = 3,
                         itemAmount = 5,
                         duration = 40,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "tobaccopipe",  itemLabel = "Dried Tobacco", itemCount = 5, removeItem = true },
                             { itemName = "rollingpaper", itemLabel = "Rolling Paper", itemCount = 5, removeItem = true }
@@ -164,6 +179,9 @@ local others = {
                         requiredLevel = 3,
                         itemAmount = 1,
                         duration = 40,
+			neededItems = {     -- or false
+                            { itemName = "hammer", itemLabel = "Hammer" },
+                        },
                         requiredItems = {
                             { itemName = "cigarette", itemLabel = "Cigarette", itemCount = 10, removeItem = true },
                             { itemName = "paper",     itemLabel = "Paper",     itemCount = 1,  removeItem = true }

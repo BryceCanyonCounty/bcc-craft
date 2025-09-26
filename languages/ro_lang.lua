@@ -100,4 +100,6 @@ Locales["ro_lang"] = {
     craftbookDiscordMoney = "**Bani cheltuiți:** %d",
     craftbookDiscordXP = "**Experiență:** %d",
     craftbookDiscordFree = "**Primit gratuit**",
+    --- New Needed Items
+    MissingNeededItem = "Missing Tool-Item: ",
 }
